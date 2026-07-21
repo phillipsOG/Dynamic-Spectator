@@ -3,6 +3,27 @@
 All notable changes to Dynamic Spectator are documented here. This project
 adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.0.1] — 2026-07-21
+
+### Fixed / Changed
+
+- Player-level users: made the scene-control tools (Spectator picker, MultiView)
+  render reliably for non-GM users, with explicit `visible:true`, distinct tool
+  `order` values, and v12-array / v13-record handling. Only the extra GM
+  dashboard tool is role-gated; the base tools are available to everyone.
+- Hardened the boot sequence: each phase (settings, controls, managers, sync) and
+  each control registration now runs in an isolated guard, so a failure in one —
+  or a core API change on a given Foundry build — is clearly logged (with the
+  user's GM flag) and can never silently take the whole module down for a user.
+  Keybindings and the Token HUD button remain available even if scene controls
+  ever fail.
+- Startup logging now reports the user name and GM flag to make role-specific
+  issues diagnosable from the browser console.
+
+### Packaging
+
+- `download` now points at the `v1.0.1` tag archive.
+
 ## [1.0.0] — 2026-07-21
 
 Initial release.

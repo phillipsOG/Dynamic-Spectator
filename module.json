@@ -2,7 +2,7 @@
   "id": "dynamic-spectator",
   "title": "Dynamic Spectator",
   "description": "Spectate any token with its true vision, lighting and fog — plus a dynamic multi-camera (MultiView) system that renders several player perspectives at once, CCTV-style, with an adaptive layout engine and streaming mode.",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "compatibility": {
     "minimum": "12",
     "verified": "13",
@@ -17,7 +17,7 @@
   ],
   "url": "https://github.com/phillipsOG/Dynamic-Spectator",
   "manifest": "https://raw.githubusercontent.com/phillipsOG/Dynamic-Spectator/main/module.json",
-  "download": "https://github.com/phillipsOG/Dynamic-Spectator/archive/refs/tags/v1.0.0.zip",
+  "download": "https://github.com/phillipsOG/Dynamic-Spectator/archive/refs/tags/v1.0.1.zip",
   "readme": "https://github.com/phillipsOG/Dynamic-Spectator/blob/main/README.md",
   "bugs": "https://github.com/phillipsOG/Dynamic-Spectator/issues",
   "license": "MIT",

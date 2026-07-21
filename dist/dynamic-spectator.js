@@ -2512,44 +2512,54 @@ function registerKeybindings() {
 }
 function registerSceneControls() {
   Hooks.on("getSceneControlButtons", (controls) => {
-    const tools = [
-      {
-        name: "ds-spectate",
-        title: game.i18n.localize("dynamic-spectator.controls.spectate"),
-        icon: "fa-solid fa-eye",
-        button: true,
-        onClick: () => SpectatorPicker.show(),
-        onChange: () => SpectatorPicker.show()
-      },
-      {
-        name: "ds-multiview",
-        title: game.i18n.localize("dynamic-spectator.controls.multiview"),
-        icon: "fa-solid fa-table-cells-large",
-        button: true,
-        onClick: () => state().multiviewApp.toggle(),
-        onChange: () => state().multiviewApp.toggle()
+    try {
+      const tools = [
+        {
+          name: "ds-spectate",
+          title: game.i18n.localize("dynamic-spectator.controls.spectate"),
+          icon: "fa-solid fa-eye",
+          button: true,
+          visible: true,
+          order: 90,
+          onClick: () => SpectatorPicker.show(),
+          onChange: () => SpectatorPicker.show()
+        },
+        {
+          name: "ds-multiview",
+          title: game.i18n.localize("dynamic-spectator.controls.multiview"),
+          icon: "fa-solid fa-table-cells-large",
+          button: true,
+          visible: true,
+          order: 91,
+          onClick: () => state().multiviewApp.toggle(),
+          onChange: () => state().multiviewApp.toggle()
+        }
+      ];
+      if (game.user.isGM) {
+        tools.push({
+          name: "ds-dashboard",
+          title: game.i18n.localize("dynamic-spectator.controls.dashboard"),
+          icon: "fa-solid fa-video",
+          button: true,
+          visible: true,
+          order: 92,
+          onClick: () => GMDashboard.show(),
+          onChange: () => GMDashboard.show()
+        });
       }
-    ];
-    if (game.user.isGM) {
-      tools.push({
-        name: "ds-dashboard",
-        title: game.i18n.localize("dynamic-spectator.controls.dashboard"),
-        icon: "fa-solid fa-video",
-        button: true,
-        onClick: () => GMDashboard.show(),
-        onChange: () => GMDashboard.show()
-      });
-    }
-    if (!Array.isArray(controls)) {
-      const tokenControl2 = controls.tokens ?? controls.token;
-      if (tokenControl2) {
-        tokenControl2.tools ??= {};
-        for (const t of tools) tokenControl2.tools[t.name] = { ...t, order: 100 };
+      if (!Array.isArray(controls)) {
+        const tokenControl2 = controls.tokens ?? controls.token;
+        if (tokenControl2) {
+          tokenControl2.tools ??= {};
+          for (const t of tools) tokenControl2.tools[t.name] = t;
+        }
+        return;
       }
-      return;
+      const tokenControl = controls.find((c) => c.name === "token" || c.name === "tokens");
+      if (tokenControl?.tools) tokenControl.tools.push(...tools);
+    } catch (err) {
+      log.error("scene control registration failed", err);
     }
-    const tokenControl = controls.find((c) => c.name === "token" || c.name === "tokens");
-    if (tokenControl) tokenControl.tools.push(...tools);
   });
 }
 function registerTokenHud() {
@@ -2611,10 +2621,17 @@ function registerTokenIndicator() {
   Hooks.on("drawToken", (token) => draw(token));
 }
 function registerAllControls() {
-  registerKeybindings();
-  registerSceneControls();
-  registerTokenHud();
-  registerTokenIndicator();
+  const safe = (label, fn) => {
+    try {
+      fn();
+    } catch (err) {
+      log.error(`control registration failed: ${label}`, err);
+    }
+  };
+  safe("keybindings", registerKeybindings);
+  safe("sceneControls", registerSceneControls);
+  safe("tokenHud", registerTokenHud);
+  safe("tokenIndicator", registerTokenIndicator);
 }
 
 // src/ui/MultiViewApp.ts
@@ -2923,7 +2940,7 @@ var TEMPLATES = [
 ];
 function buildApi() {
   return {
-    version: "1.0.0",
+    version: "1.0.1",
     /** Spectate a token by id. */
     spectate: (tokenId, exclusive = true) => DS.spectator?.start(tokenId, exclusive),
     stopSpectate: () => DS.spectator?.stop(),
@@ -2964,35 +2981,49 @@ function buildApi() {
     HOOKS
   };
 }
+function bootPhase(phase, fn) {
+  try {
+    fn();
+  } catch (err) {
+    log.error(`boot phase "${phase}" failed (isGM=${game?.user?.isGM})`, err);
+  }
+}
 Hooks.once("init", () => {
-  log.info(`Initializing ${MODULE_TITLE} v1.0.0`);
-  registerSettings(() => {
-    try {
-      if (DS.multiview?.isOpen) DS.multiview.applySettings();
-    } catch {
+  log.info(`Initializing ${MODULE_TITLE} v1.0.1 (user "${game?.user?.name}", GM=${game?.user?.isGM})`);
+  bootPhase(
+    "settings",
+    () => registerSettings(() => {
+      try {
+        if (DS.multiview?.isOpen) DS.multiview.applySettings();
+      } catch {
+      }
+    })
+  );
+  bootPhase("controls", () => registerAllControls());
+  bootPhase("templates", () => {
+    const loader = foundry.applications?.handlebars?.loadTemplates ?? globalThis.loadTemplates;
+    if (typeof loader === "function") {
+      loader(TEMPLATES).catch((err) => log.warn("template preload failed", err));
     }
   });
-  registerAllControls();
-  const loader = foundry.applications?.handlebars?.loadTemplates ?? globalThis.loadTemplates;
-  if (typeof loader === "function") {
-    loader(TEMPLATES).catch((err) => log.warn("template preload failed", err));
-  }
 });
 Hooks.once("setup", () => {
-  DS.spectator = new SpectatorManager();
-  DS.multiview = new MultiViewManager();
-  DS.multiviewApp = new MultiViewApp();
-  const api = buildApi();
-  const mod = game.modules.get(MODULE_ID);
-  if (mod) mod.api = api;
-  globalThis.DynamicSpectator = api;
-  log.debug("managers constructed; API published");
+  bootPhase("managers", () => {
+    DS.spectator = new SpectatorManager();
+    DS.multiview = new MultiViewManager();
+    DS.multiviewApp = new MultiViewApp();
+    const api = buildApi();
+    const mod = game.modules.get(MODULE_ID);
+    if (mod) mod.api = api;
+    globalThis.DynamicSpectator = api;
+    log.debug("managers constructed; API published");
+  });
 });
 Hooks.once("ready", () => {
-  registerSyncHooks();
+  bootPhase("sync", () => registerSyncHooks());
   DS.ready = true;
   Hooks.callAll(`${MODULE_ID}.ready`, buildApi());
-  log.info(`${MODULE_TITLE} ready`);
+  log.info(`${MODULE_TITLE} ready for "${game?.user?.name}"`);
 });
 Hooks.on("canvasTearDown", () => {
   try {

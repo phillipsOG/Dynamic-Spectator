@@ -1,6 +1,6 @@
 {
   "name": "dynamic-spectator",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Universal spectator mode and a dynamic multi-camera (MultiView) system for Foundry Virtual Tabletop.",
   "type": "module",
   "private": true,

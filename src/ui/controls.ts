@@ -93,50 +93,66 @@ export function registerKeybindings(): void {
   });
 }
 
-/** Add our tools to the token scene-control group. */
+/**
+ * Add our tools to the token scene-control group. These render for EVERY user
+ * (players included) — only the extra GM dashboard tool is role-gated, which
+ * never affects the base spectate/multiview tools. Distinct `order` values and
+ * explicit `visible:true` avoid v13 tool-record quirks, and the whole thing is
+ * wrapped so a control-framework change can never take the module down.
+ */
 export function registerSceneControls(): void {
   Hooks.on("getSceneControlButtons", (controls: any) => {
-    const tools = [
-      {
-        name: "ds-spectate",
-        title: game.i18n.localize("dynamic-spectator.controls.spectate"),
-        icon: "fa-solid fa-eye",
-        button: true,
-        onClick: () => SpectatorPicker.show(),
-        onChange: () => SpectatorPicker.show()
-      },
-      {
-        name: "ds-multiview",
-        title: game.i18n.localize("dynamic-spectator.controls.multiview"),
-        icon: "fa-solid fa-table-cells-large",
-        button: true,
-        onClick: () => state().multiviewApp.toggle(),
-        onChange: () => state().multiviewApp.toggle()
+    try {
+      const tools: any[] = [
+        {
+          name: "ds-spectate",
+          title: game.i18n.localize("dynamic-spectator.controls.spectate"),
+          icon: "fa-solid fa-eye",
+          button: true,
+          visible: true,
+          order: 90,
+          onClick: () => SpectatorPicker.show(),
+          onChange: () => SpectatorPicker.show()
+        },
+        {
+          name: "ds-multiview",
+          title: game.i18n.localize("dynamic-spectator.controls.multiview"),
+          icon: "fa-solid fa-table-cells-large",
+          button: true,
+          visible: true,
+          order: 91,
+          onClick: () => state().multiviewApp.toggle(),
+          onChange: () => state().multiviewApp.toggle()
+        }
+      ];
+      if (game.user.isGM) {
+        tools.push({
+          name: "ds-dashboard",
+          title: game.i18n.localize("dynamic-spectator.controls.dashboard"),
+          icon: "fa-solid fa-video",
+          button: true,
+          visible: true,
+          order: 92,
+          onClick: () => GMDashboard.show(),
+          onChange: () => GMDashboard.show()
+        });
       }
-    ];
-    if (game.user.isGM) {
-      tools.push({
-        name: "ds-dashboard",
-        title: game.i18n.localize("dynamic-spectator.controls.dashboard"),
-        icon: "fa-solid fa-video",
-        button: true,
-        onClick: () => GMDashboard.show(),
-        onChange: () => GMDashboard.show()
-      });
-    }
 
-    // v13: controls is a Record keyed by name, tools is a Record too.
-    if (!Array.isArray(controls)) {
-      const tokenControl = controls.tokens ?? controls.token;
-      if (tokenControl) {
-        tokenControl.tools ??= {};
-        for (const t of tools) tokenControl.tools[t.name] = { ...t, order: 100 };
+      // v13+: `controls` is a Record keyed by control name; `.tools` is a Record.
+      if (!Array.isArray(controls)) {
+        const tokenControl = controls.tokens ?? controls.token;
+        if (tokenControl) {
+          tokenControl.tools ??= {};
+          for (const t of tools) tokenControl.tools[t.name] = t;
+        }
+        return;
       }
-      return;
+      // v12: `controls` is an array; `.tools` is an array.
+      const tokenControl = controls.find((c: any) => c.name === "token" || c.name === "tokens");
+      if (tokenControl?.tools) tokenControl.tools.push(...tools);
+    } catch (err) {
+      log.error("scene control registration failed", err);
     }
-    // v12: controls is an array; tools is an array.
-    const tokenControl = controls.find((c: any) => c.name === "token" || c.name === "tokens");
-    if (tokenControl) tokenControl.tools.push(...tools);
   });
 }
 
@@ -209,8 +225,19 @@ export function registerTokenIndicator(): void {
 }
 
 export function registerAllControls(): void {
-  registerKeybindings();
-  registerSceneControls();
-  registerTokenHud();
-  registerTokenIndicator();
+  // Register each entry point independently so one failing (e.g. a core API
+  // change on a given version) can never prevent the others from loading. This
+  // is important for players: if scene controls hiccup, keybindings + Token HUD
+  // still give them access.
+  const safe = (label: string, fn: () => void): void => {
+    try {
+      fn();
+    } catch (err) {
+      log.error(`control registration failed: ${label}`, err);
+    }
+  };
+  safe("keybindings", registerKeybindings);
+  safe("sceneControls", registerSceneControls);
+  safe("tokenHud", registerTokenHud);
+  safe("tokenIndicator", registerTokenIndicator);
 }
