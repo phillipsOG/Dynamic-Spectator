@@ -1,0 +1,53 @@
+{{!--
+  Spectator picker body. Rendered by SpectatorPicker (ApplicationV2).
+  [data-action] elements are auto-wired to the app's action handlers; live text
+  filtering is handled in _onRender via [data-ds-search] / [data-ds-row].
+--}}
+<div class="ds-picker-body">
+  <div class="ds-picker-toolbar">
+    <div class="ds-search">
+      <i class="fa-solid fa-magnifying-glass"></i>
+      <input type="text" data-ds-search placeholder="{{localize 'dynamic-spectator.picker.search'}}" />
+    </div>
+    {{#if spectating}}
+    <button type="button" class="ds-stop" data-action="stop">
+      <i class="fa-solid fa-eye-slash"></i> {{localize 'dynamic-spectator.picker.stop'}}
+    </button>
+    {{/if}}
+  </div>
+
+  {{#if hasRows}}
+  <ul class="ds-token-list">
+    {{#each rows}}
+    <li class="ds-token-row {{#if this.current}}current{{/if}}"
+        data-ds-row data-token-id="{{this.tokenId}}" data-name="{{this.name}}">
+      <img class="ds-token-portrait" src="{{this.img}}" alt="" />
+      <div class="ds-token-info">
+        <span class="ds-token-name">{{this.name}}</span>
+        <span class="ds-token-meta">
+          <span class="ds-disposition disp-{{this.disposition}}">{{this.dispositionLabel}}</span>
+          <span class="ds-token-elev"><i class="fa-solid fa-mountain"></i> {{this.elevation}}</span>
+          {{#if this.inMultiView}}<span class="ds-inview"><i class="fa-solid fa-table-cells-large"></i></span>{{/if}}
+          {{#if this.current}}<span class="ds-current-tag">{{localize 'dynamic-spectator.picker.current'}}</span>{{/if}}
+        </span>
+      </div>
+      <div class="ds-token-actions">
+        <button type="button" class="ds-btn" data-action="spectate" title="{{localize 'dynamic-spectator.picker.spectate'}}">
+          <i class="fa-solid fa-eye"></i>
+        </button>
+        <button type="button" class="ds-btn" data-action="addView" title="{{localize 'dynamic-spectator.picker.addView'}}">
+          <i class="fa-solid fa-table-cells-large"></i>
+        </button>
+        {{#if ../isGM}}
+        <button type="button" class="ds-btn" data-action="optOut" title="{{localize 'dynamic-spectator.picker.optOut'}}">
+          <i class="fa-solid fa-ban"></i>
+        </button>
+        {{/if}}
+      </div>
+    </li>
+    {{/each}}
+  </ul>
+  {{else}}
+  <p class="ds-empty">{{localize 'dynamic-spectator.picker.empty'}}</p>
+  {{/if}}
+</div>

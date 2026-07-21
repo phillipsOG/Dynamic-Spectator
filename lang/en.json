@@ -1,0 +1,191 @@
+{
+  "dynamic-spectator": {
+    "settings": {
+      "permissionMode": {
+        "name": "Who may spectate",
+        "hint": "Controls which tokens a player is allowed to spectate. The GM can always spectate anything.",
+        "gmOnly": "GM only",
+        "ownedOnly": "Players: owned tokens only",
+        "partyMembers": "Players: party members",
+        "anyPlayerToken": "Players: any player-owned token",
+        "anyToken": "Players: any token"
+      },
+      "maxCameras": {
+        "name": "Maximum simultaneous cameras",
+        "hint": "The most viewports rendered at once on this client. Additional cameras paginate. Higher values cost more GPU."
+      },
+      "autoGrouping": {
+        "name": "Automatic grouping",
+        "hint": "When auto-observing, group nearby tokens at the same elevation so viewports are not wasted on split parties."
+      },
+      "elevationThreshold": {
+        "name": "Elevation threshold",
+        "hint": "Tokens within this many elevation units are treated as being on the same floor for grouping and 'observe this elevation'."
+      },
+      "groupingDistance": {
+        "name": "Grouping distance",
+        "hint": "Tokens closer than this (in grid units) are grouped into a single viewport when auto-grouping."
+      },
+      "viewportPadding": {
+        "name": "Viewport padding",
+        "hint": "Gap in pixels between viewports in the MultiView grid. Streaming mode forces this to zero."
+      },
+      "streamingMode": {
+        "name": "Streaming mode",
+        "hint": "Clean, borderless, minimal-UI output with cinematic transitions — intended for OBS capture."
+      },
+      "cameraMode": {
+        "name": "Camera follow mode",
+        "hint": "How the camera tracks a moving token.",
+        "smooth": "Smooth (eased follow)",
+        "snap": "Snap (instant)",
+        "interpolate": "Interpolate",
+        "deadZone": "Dead-zone (move only when it drifts)"
+      },
+      "followSpeed": {
+        "name": "Follow speed",
+        "hint": "Responsiveness of smooth/interpolate camera follow (higher is snappier)."
+      },
+      "transitionSpeed": {
+        "name": "Transition speed",
+        "hint": "Speed of animated layout / viewport transitions."
+      },
+      "deadZone": {
+        "name": "Dead-zone size",
+        "hint": "Fraction of the viewport the token may drift before a dead-zone camera reacts."
+      },
+      "zoomMemory": {
+        "name": "Independent zoom memory",
+        "hint": "Remember each viewport's zoom independently."
+      },
+      "performanceMode": {
+        "name": "Performance mode",
+        "hint": "Trades render cadence and capture resolution against smoothness.",
+        "quality": "Quality",
+        "balanced": "Balanced",
+        "performance": "Performance",
+        "battery": "Battery saver"
+      },
+      "renderScale": {
+        "name": "Render scale",
+        "hint": "Off-screen capture resolution multiplier. Below 1.0 is faster and softer."
+      },
+      "frameRateCap": {
+        "name": "Frame-rate cap",
+        "hint": "Upper bound on MultiView capture frames per second."
+      },
+      "secondaryCadence": {
+        "name": "Secondary camera cadence",
+        "hint": "Recapture secondary (non-primary) viewports every N capture frames. Higher saves GPU."
+      },
+      "crossSceneBehaviour": {
+        "name": "When a tracked token changes scene",
+        "hint": "What to do when the token you are following moves to another scene.",
+        "prompt": "Ask me",
+        "follow": "Follow automatically",
+        "drop": "Stop following"
+      },
+      "debugLogging": {
+        "name": "Debug logging",
+        "hint": "Verbose console output prefixed with 'Dynamic Spectator'."
+      },
+      "profiling": {
+        "name": "Performance profiling",
+        "hint": "Collect timing samples and show an FPS / budget readout on the MultiView control bar."
+      }
+    },
+    "notify": {
+      "notAllowed": "You are not allowed to spectate {name}.",
+      "spectating": "Spectating {name}.",
+      "observeElevation": "Observing tokens near elevation {elevation}.",
+      "noPlayerToken": "That player has no token on this scene.",
+      "gmOnly": "Only the GM can do that."
+    },
+    "picker": {
+      "title": "Spectate a Token",
+      "search": "Search tokens…",
+      "empty": "No tokens you can spectate on this scene.",
+      "spectate": "Spectate",
+      "addView": "Add to MultiView",
+      "stop": "Stop spectating",
+      "optOut": "Toggle spectate opt-out",
+      "current": "Spectating"
+    },
+    "disposition": {
+      "friendly": "Friendly",
+      "neutral": "Neutral",
+      "hostile": "Hostile"
+    },
+    "crossScene": {
+      "title": "Tracked token changed scene",
+      "body": "A token you are following has moved to another scene. Follow it there?",
+      "follow": "Follow",
+      "drop": "Stop"
+    },
+    "mv": {
+      "add": "Add view",
+      "auto": "Auto",
+      "party": "Party",
+      "combatants": "Combat",
+      "npcs": "NPCs",
+      "prevPage": "Previous page",
+      "nextPage": "Next page",
+      "streaming": "Streaming",
+      "close": "Close"
+    },
+    "vp": {
+      "primary": "Make primary",
+      "pin": "Pin",
+      "solo": "Solo / fullscreen",
+      "zoomIn": "Zoom in",
+      "zoomOut": "Zoom out",
+      "collapse": "Collapse",
+      "close": "Remove"
+    },
+    "dashboard": {
+      "title": "Dynamic Spectator — GM Dashboard",
+      "observe": "Observe",
+      "party": "Entire party",
+      "combatants": "Combatants",
+      "npcs": "NPCs",
+      "elevation": "This elevation",
+      "openMultiView": "Open MultiView",
+      "closeMultiView": "Close MultiView",
+      "players": "Players",
+      "permissions": "Permission",
+      "spectate": "Spectate",
+      "noCharacter": "(no character)",
+      "default": "default",
+      "diagnostics": "Diagnostics",
+      "viewports": "Active viewports:"
+    },
+    "keys": {
+      "quickSpectate": {
+        "name": "Quick spectate (hovered token)",
+        "hint": "Spectate the hovered / selected / targeted token, or open the picker."
+      },
+      "openPicker": {
+        "name": "Open spectator picker",
+        "hint": "Open the searchable list of spectatable tokens."
+      },
+      "toggleMultiView": {
+        "name": "Toggle MultiView",
+        "hint": "Open or close the multi-camera overlay."
+      },
+      "stopSpectate": {
+        "name": "Stop spectating",
+        "hint": "Release the camera and restore your normal vision."
+      },
+      "openDashboard": {
+        "name": "Open GM dashboard",
+        "hint": "Open the GM control centre (GM only)."
+      }
+    },
+    "controls": {
+      "spectate": "Spectator",
+      "stop": "Stop spectating",
+      "multiview": "MultiView",
+      "dashboard": "Spectator Dashboard"
+    }
+  }
+}

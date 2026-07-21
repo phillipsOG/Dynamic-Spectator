@@ -1,0 +1,32 @@
+{
+  "name": "dynamic-spectator",
+  "version": "1.0.0",
+  "description": "Universal spectator mode and a dynamic multi-camera (MultiView) system for Foundry Virtual Tabletop.",
+  "type": "module",
+  "private": true,
+  "license": "MIT",
+  "author": "phillipsOG",
+  "homepage": "https://github.com/phillipsOG/Dynamic-Spectator",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/phillipsOG/Dynamic-Spectator.git"
+  },
+  "scripts": {
+    "clean": "node -e \"import('node:fs').then(fs=>fs.rmSync('dist',{recursive:true,force:true}))\"",
+    "typecheck": "tsc --noEmit",
+    "build": "npm run typecheck && node esbuild.config.mjs",
+    "build:fast": "node esbuild.config.mjs",
+    "watch": "node esbuild.config.mjs --watch",
+    "lint": "eslint \"src/**/*.ts\"",
+    "format": "prettier --write \"src/**/*.ts\" \"*.{json,md}\"",
+    "link": "node tools/link-to-foundry.mjs"
+  },
+  "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^8.15.0",
+    "@typescript-eslint/parser": "^8.15.0",
+    "esbuild": "^0.24.0",
+    "eslint": "^9.15.0",
+    "prettier": "^3.4.1",
+    "typescript": "^5.7.2"
+  }
+}

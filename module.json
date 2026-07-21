@@ -1,0 +1,49 @@
+{
+  "id": "dynamic-spectator",
+  "title": "Dynamic Spectator",
+  "description": "Spectate any token with its true vision, lighting and fog — plus a dynamic multi-camera (MultiView) system that renders several player perspectives at once, CCTV-style, with an adaptive layout engine and streaming mode.",
+  "version": "1.0.0",
+  "compatibility": {
+    "minimum": "12",
+    "verified": "13",
+    "maximum": "13"
+  },
+  "authors": [
+    {
+      "name": "phillipsOG",
+      "url": "https://github.com/phillipsOG",
+      "flags": {}
+    }
+  ],
+  "url": "https://github.com/phillipsOG/Dynamic-Spectator",
+  "manifest": "https://raw.githubusercontent.com/phillipsOG/Dynamic-Spectator/main/module.json",
+  "download": "https://github.com/phillipsOG/Dynamic-Spectator/releases/latest/download/module.zip",
+  "readme": "https://github.com/phillipsOG/Dynamic-Spectator/blob/main/README.md",
+  "bugs": "https://github.com/phillipsOG/Dynamic-Spectator/issues",
+  "license": "MIT",
+  "esmodules": ["dist/dynamic-spectator.js"],
+  "styles": ["styles/dynamic-spectator.css"],
+  "languages": [
+    {
+      "lang": "en",
+      "name": "English",
+      "path": "lang/en.json"
+    }
+  ],
+  "relationships": {
+    "recommended": [
+      {
+        "id": "lib-wrapper",
+        "type": "module",
+        "reason": "Used for clean, conflict-free patching of Token vision when available. The module degrades gracefully to a manual wrapper if lib-wrapper is not installed.",
+        "compatibility": {}
+      }
+    ]
+  },
+  "socket": true,
+  "flags": {
+    "dynamic-spectator": {
+      "supportsSpectate": true
+    }
+  }
+}
