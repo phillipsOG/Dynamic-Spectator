@@ -10,6 +10,10 @@
  * Built on ApplicationV2 + HandlebarsApplicationMixin (the modern Foundry app
  * framework). Search filtering is done live in the rendered DOM for zero-latency
  * typing without re-rendering the whole list.
+ *
+ * The list is live: `registerRefreshHooks()` re-renders the open picker when the
+ * scene's tokens change, so a GM dropping in new tokens shows up without the
+ * player closing and reopening the window.
  */
 
 import { MODULE_ID, TOKEN_FLAGS } from "../constants.js";
@@ -19,6 +23,13 @@ import { log } from "../util/logger.js";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
+
+/**
+ * Token-document fields that change what a row *displays*. Movement (`x`/`y`)
+ * is deliberately absent: dragging a token fires a burst of updates and none of
+ * them alter the list, so re-rendering on them would be pure waste.
+ */
+const ROW_FIELDS = ["name", "texture", "elevation", "disposition", "hidden", "ownership", "actorId"];
 
 interface Row {
   tokenId: string;
@@ -56,6 +67,13 @@ export class SpectatorPicker extends HandlebarsApplicationMixin(ApplicationV2) {
   static PARTS = {
     body: { template: `modules/${MODULE_ID}/templates/spectator-picker.hbs` }
   };
+
+  /**
+   * The open picker, if any. ApplicationV2 instances are not registered in
+   * `ui.windows` (that is the V1 registry), so we keep our own handle rather
+   * than searching one that will never contain us.
+   */
+  private static instance: SpectatorPicker | null = null;
 
   /** Current search query (kept across re-renders). */
   private query = "";
@@ -177,13 +195,66 @@ export class SpectatorPicker extends HandlebarsApplicationMixin(ApplicationV2) {
 
   /** Singleton open helper. */
   static show(): void {
-    const existing = Object.values(ui.windows ?? {}).find(
-      (w: any) => w?.id === `${MODULE_ID}-picker`
-    ) as any;
-    if (existing) {
+    const existing = SpectatorPicker.instance;
+    if (existing?.rendered) {
       existing.bringToFront?.();
       return;
     }
-    new SpectatorPicker().render(true);
+    const app = new SpectatorPicker();
+    SpectatorPicker.instance = app;
+    app.render(true);
+  }
+
+  _onClose(options: unknown): void {
+    super._onClose(options);
+    if (SpectatorPicker.instance === this) SpectatorPicker.instance = null;
+  }
+
+  /**
+   * Re-render the list in place, preserving the search box's focus and caret so
+   * a refresh landing mid-keystroke does not interrupt typing. The query itself
+   * already survives via `this.query`.
+   */
+  private async refreshList(): Promise<void> {
+    if (!this.rendered) return;
+    const search = this.searchInput();
+    const hadFocus = Boolean(search) && document.activeElement === search;
+    const caret = search?.selectionStart ?? null;
+
+    await this.render();
+
+    if (!hadFocus) return;
+    const next = this.searchInput();
+    if (!next) return;
+    next.focus();
+    if (caret !== null) next.setSelectionRange(caret, caret);
+  }
+
+  private searchInput(): HTMLInputElement | null {
+    const root = (this as any).element as HTMLElement | undefined;
+    return root?.querySelector<HTMLInputElement>("[data-ds-search]") ?? null;
+  }
+
+  /**
+   * Keep an open picker in step with the scene. Registered once at boot; every
+   * handler is a no-op while the picker is closed.
+   */
+  static registerRefreshHooks(): void {
+    // Debounced because a GM pasting several tokens fires one hook each.
+    const refresh = foundry.utils.debounce(() => {
+      void SpectatorPicker.instance?.refreshList();
+    }, 100);
+
+    Hooks.on("createToken", () => refresh());
+    Hooks.on("deleteToken", () => refresh());
+    Hooks.on("updateToken", (_doc: FoundryTokenDocument, changes: Record<string, unknown>) => {
+      if (ROW_FIELDS.some((f) => f in changes)) refresh();
+    });
+    // Name, portrait and ownership can all change on the actor instead.
+    Hooks.on("updateActor", () => refresh());
+    // A different scene is an entirely different token list.
+    Hooks.on("canvasReady", () => refresh());
+
+    log.debug("picker refresh hooks registered");
   }
 }

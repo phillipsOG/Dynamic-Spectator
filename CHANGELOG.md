@@ -3,6 +3,24 @@
 All notable changes to Dynamic Spectator are documented here. This project
 adheres to [Semantic Versioning](https://semver.org/).
 
+## [2.0.1] — 2026-07-21
+
+### Fixed
+
+- **The spectator picker's token list is now live.** Tokens the GM added (or
+  removed) after the picker was opened did not appear until it was closed and
+  reopened. It now re-renders on `createToken` / `deleteToken`, on `updateToken`
+  for the fields a row actually displays (name, portrait, elevation,
+  disposition, hidden, ownership), on `updateActor`, and on scene change.
+  Updates are debounced, and token *movement* is deliberately excluded — it
+  fires constantly and changes nothing in the list. A refresh landing while you
+  type preserves the search box's focus and caret.
+- **The picker and dashboard could each open twice.** Their "already open?"
+  check searched `ui.windows`, which is the ApplicationV1 registry —
+  ApplicationV2 windows are never in it, so the check always missed and a second
+  instance was created with a duplicate DOM id. Each app now keeps its own
+  instance handle, cleared on close.
+
 ## [2.0.0] — 2026-07-21
 
 ### Removed

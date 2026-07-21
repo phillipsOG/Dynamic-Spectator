@@ -4,7 +4,8 @@
  *   • a Spectate button injected into the Token HUD (right-click a token);
  *   • keybindings (quick-spectate hovered token, open picker, stop spectating,
  *     open dashboard);
- *   • the on-canvas pulsing ring drawn on the token currently being spectated.
+ *   • the on-canvas pulsing ring drawn on the token currently being spectated;
+ *   • the hooks that keep an open picker's token list live.
  *
  * Every hook is registered defensively so the same code path works across the
  * v12→v13 changes to scene-control and HUD shapes (array vs record, jQuery vs
@@ -222,4 +223,5 @@ export function registerAllControls(): void {
   safe("sceneControls", registerSceneControls);
   safe("tokenHud", registerTokenHud);
   safe("tokenIndicator", registerTokenIndicator);
+  safe("pickerRefresh", () => SpectatorPicker.registerRefreshHooks());
 }

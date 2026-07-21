@@ -50,6 +50,13 @@ export class GMDashboard extends HandlebarsApplicationMixin(ApplicationV2) {
     body: { template: `modules/${MODULE_ID}/templates/gm-dashboard.hbs` }
   };
 
+  /**
+   * The open dashboard, if any. ApplicationV2 instances are not registered in
+   * `ui.windows` (that is the V1 registry), so we keep our own handle rather
+   * than searching one that will never contain us.
+   */
+  private static instance: GMDashboard | null = null;
+
   async _prepareContext(): Promise<Record<string, unknown>> {
     const overrides =
       (game.settings.get(MODULE_ID, SETTINGS.perPlayerPermissions) as Record<string, string>) ?? {};
@@ -137,13 +144,18 @@ export class GMDashboard extends HandlebarsApplicationMixin(ApplicationV2) {
       ui.notifications.warn(game.i18n.localize("dynamic-spectator.notify.gmOnly"));
       return;
     }
-    const existing = Object.values(ui.windows ?? {}).find(
-      (w: any) => w?.id === `${MODULE_ID}-dashboard`
-    ) as any;
-    if (existing) {
+    const existing = GMDashboard.instance;
+    if (existing?.rendered) {
       existing.bringToFront?.();
       return;
     }
-    new GMDashboard().render(true);
+    const app = new GMDashboard();
+    GMDashboard.instance = app;
+    app.render(true);
+  }
+
+  _onClose(options: unknown): void {
+    super._onClose(options);
+    if (GMDashboard.instance === this) GMDashboard.instance = null;
   }
 }

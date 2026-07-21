@@ -1082,6 +1082,12 @@ var GMDashboard = class _GMDashboard extends HandlebarsApplicationMixin(Applicat
   static PARTS = {
     body: { template: `modules/${MODULE_ID}/templates/gm-dashboard.hbs` }
   };
+  /**
+   * The open dashboard, if any. ApplicationV2 instances are not registered in
+   * `ui.windows` (that is the V1 registry), so we keep our own handle rather
+   * than searching one that will never contain us.
+   */
+  static instance = null;
   async _prepareContext() {
     const overrides = game.settings.get(MODULE_ID, SETTINGS.perPlayerPermissions) ?? {};
     const players = game.users.filter((u) => !u.isGM).map((u) => ({
@@ -1155,14 +1161,18 @@ var GMDashboard = class _GMDashboard extends HandlebarsApplicationMixin(Applicat
       ui.notifications.warn(game.i18n.localize("dynamic-spectator.notify.gmOnly"));
       return;
     }
-    const existing = Object.values(ui.windows ?? {}).find(
-      (w) => w?.id === `${MODULE_ID}-dashboard`
-    );
-    if (existing) {
+    const existing = _GMDashboard.instance;
+    if (existing?.rendered) {
       existing.bringToFront?.();
       return;
     }
-    new _GMDashboard().render(true);
+    const app = new _GMDashboard();
+    _GMDashboard.instance = app;
+    app.render(true);
+  }
+  _onClose(options) {
+    super._onClose(options);
+    if (_GMDashboard.instance === this) _GMDashboard.instance = null;
   }
 };
 
@@ -1170,6 +1180,7 @@ var GMDashboard = class _GMDashboard extends HandlebarsApplicationMixin(Applicat
 init_constants();
 init_PermissionManager();
 var { ApplicationV2: ApplicationV22, HandlebarsApplicationMixin: HandlebarsApplicationMixin2 } = foundry.applications.api;
+var ROW_FIELDS = ["name", "texture", "elevation", "disposition", "hidden", "ownership", "actorId"];
 var SpectatorPicker = class _SpectatorPicker extends HandlebarsApplicationMixin2(ApplicationV22) {
   static DEFAULT_OPTIONS = {
     id: `${MODULE_ID}-picker`,
@@ -1190,6 +1201,12 @@ var SpectatorPicker = class _SpectatorPicker extends HandlebarsApplicationMixin2
   static PARTS = {
     body: { template: `modules/${MODULE_ID}/templates/spectator-picker.hbs` }
   };
+  /**
+   * The open picker, if any. ApplicationV2 instances are not registered in
+   * `ui.windows` (that is the V1 registry), so we keep our own handle rather
+   * than searching one that will never contain us.
+   */
+  static instance = null;
   /** Current search query (kept across re-renders). */
   query = "";
   async _prepareContext() {
@@ -1291,14 +1308,56 @@ var SpectatorPicker = class _SpectatorPicker extends HandlebarsApplicationMixin2
   }
   /** Singleton open helper. */
   static show() {
-    const existing = Object.values(ui.windows ?? {}).find(
-      (w) => w?.id === `${MODULE_ID}-picker`
-    );
-    if (existing) {
+    const existing = _SpectatorPicker.instance;
+    if (existing?.rendered) {
       existing.bringToFront?.();
       return;
     }
-    new _SpectatorPicker().render(true);
+    const app = new _SpectatorPicker();
+    _SpectatorPicker.instance = app;
+    app.render(true);
+  }
+  _onClose(options) {
+    super._onClose(options);
+    if (_SpectatorPicker.instance === this) _SpectatorPicker.instance = null;
+  }
+  /**
+   * Re-render the list in place, preserving the search box's focus and caret so
+   * a refresh landing mid-keystroke does not interrupt typing. The query itself
+   * already survives via `this.query`.
+   */
+  async refreshList() {
+    if (!this.rendered) return;
+    const search = this.searchInput();
+    const hadFocus = Boolean(search) && document.activeElement === search;
+    const caret = search?.selectionStart ?? null;
+    await this.render();
+    if (!hadFocus) return;
+    const next = this.searchInput();
+    if (!next) return;
+    next.focus();
+    if (caret !== null) next.setSelectionRange(caret, caret);
+  }
+  searchInput() {
+    const root = this.element;
+    return root?.querySelector("[data-ds-search]") ?? null;
+  }
+  /**
+   * Keep an open picker in step with the scene. Registered once at boot; every
+   * handler is a no-op while the picker is closed.
+   */
+  static registerRefreshHooks() {
+    const refresh = foundry.utils.debounce(() => {
+      void _SpectatorPicker.instance?.refreshList();
+    }, 100);
+    Hooks.on("createToken", () => refresh());
+    Hooks.on("deleteToken", () => refresh());
+    Hooks.on("updateToken", (_doc, changes) => {
+      if (ROW_FIELDS.some((f) => f in changes)) refresh();
+    });
+    Hooks.on("updateActor", () => refresh());
+    Hooks.on("canvasReady", () => refresh());
+    log.debug("picker refresh hooks registered");
   }
 };
 
@@ -1470,6 +1529,7 @@ function registerAllControls() {
   safe("sceneControls", registerSceneControls);
   safe("tokenHud", registerTokenHud);
   safe("tokenIndicator", registerTokenIndicator);
+  safe("pickerRefresh", () => SpectatorPicker.registerRefreshHooks());
 }
 
 // src/module.ts
@@ -1479,7 +1539,7 @@ var TEMPLATES = [
 ];
 function buildApi() {
   return {
-    version: "2.0.0",
+    version: "2.0.1",
     /** Spectate a token by id. */
     spectate: (tokenId, exclusive = true) => DS.spectator?.start(tokenId, exclusive),
     stopSpectate: () => DS.spectator?.stop(),
@@ -1505,7 +1565,7 @@ function bootPhase(phase, fn) {
   }
 }
 Hooks.once("init", () => {
-  log.info(`Initializing ${MODULE_TITLE} v2.0.0 (user "${game?.user?.name}", GM=${game?.user?.isGM})`);
+  log.info(`Initializing ${MODULE_TITLE} v2.0.1 (user "${game?.user?.name}", GM=${game?.user?.isGM})`);
   bootPhase("settings", () => registerSettings());
   bootPhase("controls", () => registerAllControls());
   bootPhase("templates", () => {
