@@ -3,6 +3,22 @@
 All notable changes to Dynamic Spectator are documented here. This project
 adheres to [Semantic Versioning](https://semver.org/).
 
+## [2.0.2] — 2026-07-21
+
+### Fixed
+
+- **Permission changes now refresh an open picker.** A GM changing the
+  permission mode, a per-player override, or the "Allow spectating NPC tokens"
+  world setting left every player's open picker showing the old list. It now
+  refreshes on `updateSetting` for any setting in the module's namespace —
+  those are all permission settings, and permissions decide which rows a user
+  may see at all.
+- **Per-token opt-out and NPC overrides now refresh it too.** Both are stored as
+  token flags, and flag updates were not in the set of changes that triggered a
+  re-render — so a GM toggling one changed nothing on a player's screen until
+  they reopened the window. The check is scoped to the module's own flag
+  namespace, so another module's flag churn does not re-render us.
+
 ## [2.0.1] — 2026-07-21
 
 ### Fixed

@@ -12,8 +12,9 @@
  * typing without re-rendering the whole list.
  *
  * The list is live: `registerRefreshHooks()` re-renders the open picker when the
- * scene's tokens change, so a GM dropping in new tokens shows up without the
- * player closing and reopening the window.
+ * scene's tokens change *or* when the GM changes who may spectate what, so
+ * neither a new token nor a permission change needs the player to close and
+ * reopen the window.
  */
 
 import { MODULE_ID, TOKEN_FLAGS } from "../constants.js";
@@ -248,13 +249,30 @@ export class SpectatorPicker extends HandlebarsApplicationMixin(ApplicationV2) {
     Hooks.on("createToken", () => refresh());
     Hooks.on("deleteToken", () => refresh());
     Hooks.on("updateToken", (_doc: FoundryTokenDocument, changes: Record<string, unknown>) => {
-      if (ROW_FIELDS.some((f) => f in changes)) refresh();
+      if (SpectatorPicker.touchesRow(changes)) refresh();
     });
     // Name, portrait and ownership can all change on the actor instead.
     Hooks.on("updateActor", () => refresh());
     // A different scene is an entirely different token list.
     Hooks.on("canvasReady", () => refresh());
+    // Our world settings are all permission settings, and permissions decide
+    // which rows a user may see at all — so any of ours is worth a refresh.
+    // (Client-scoped settings live in localStorage and never reach this hook,
+    // which is fine: none of them affect the list.)
+    Hooks.on("updateSetting", (setting: { key?: string }) => {
+      if (setting?.key?.startsWith(`${MODULE_ID}.`)) refresh();
+    });
 
     log.debug("picker refresh hooks registered");
+  }
+
+  /** Does this token update change anything the list shows or gates on? */
+  private static touchesRow(changes: Record<string, unknown>): boolean {
+    if (ROW_FIELDS.some((f) => f in changes)) return true;
+    // Our own per-token flags decide whether a row appears at all: `noSpectate`
+    // (opt-out) and `npcSpectatable` (the GM's per-NPC override). Scoped to our
+    // namespace so another module's flag churn does not re-render us.
+    const flags = changes.flags as Record<string, unknown> | undefined;
+    return Boolean(flags && MODULE_ID in flags);
   }
 }

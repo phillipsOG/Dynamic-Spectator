@@ -1353,11 +1353,20 @@ var SpectatorPicker = class _SpectatorPicker extends HandlebarsApplicationMixin2
     Hooks.on("createToken", () => refresh());
     Hooks.on("deleteToken", () => refresh());
     Hooks.on("updateToken", (_doc, changes) => {
-      if (ROW_FIELDS.some((f) => f in changes)) refresh();
+      if (_SpectatorPicker.touchesRow(changes)) refresh();
     });
     Hooks.on("updateActor", () => refresh());
     Hooks.on("canvasReady", () => refresh());
+    Hooks.on("updateSetting", (setting) => {
+      if (setting?.key?.startsWith(`${MODULE_ID}.`)) refresh();
+    });
     log.debug("picker refresh hooks registered");
+  }
+  /** Does this token update change anything the list shows or gates on? */
+  static touchesRow(changes) {
+    if (ROW_FIELDS.some((f) => f in changes)) return true;
+    const flags = changes.flags;
+    return Boolean(flags && MODULE_ID in flags);
   }
 };
 
@@ -1539,7 +1548,7 @@ var TEMPLATES = [
 ];
 function buildApi() {
   return {
-    version: "2.0.1",
+    version: "2.0.2",
     /** Spectate a token by id. */
     spectate: (tokenId, exclusive = true) => DS.spectator?.start(tokenId, exclusive),
     stopSpectate: () => DS.spectator?.stop(),
@@ -1565,7 +1574,7 @@ function bootPhase(phase, fn) {
   }
 }
 Hooks.once("init", () => {
-  log.info(`Initializing ${MODULE_TITLE} v2.0.1 (user "${game?.user?.name}", GM=${game?.user?.isGM})`);
+  log.info(`Initializing ${MODULE_TITLE} v2.0.2 (user "${game?.user?.name}", GM=${game?.user?.isGM})`);
   bootPhase("settings", () => registerSettings());
   bootPhase("controls", () => registerAllControls());
   bootPhase("templates", () => {
