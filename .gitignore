@@ -1,5 +1,7 @@
 node_modules/
-dist/
+# The built bundle IS committed so Foundry can load it from the tag archive.
+# Only the source map is excluded to keep the install archive lean.
+dist/*.map
 *.log
 .DS_Store
 .idea/
