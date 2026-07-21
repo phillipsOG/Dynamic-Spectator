@@ -35,7 +35,7 @@ const TEMPLATES = [
 /** Build the public API object once the managers exist. */
 function buildApi() {
   return {
-    version: "1.0.1",
+    version: "1.1.0",
     /** Spectate a token by id. */
     spectate: (tokenId: string, exclusive = true) => DS.spectator?.start(tokenId, exclusive),
     stopSpectate: () => DS.spectator?.stop(),
@@ -93,7 +93,7 @@ function bootPhase(phase: string, fn: () => void): void {
 }
 
 Hooks.once("init", () => {
-  log.info(`Initializing ${MODULE_TITLE} v1.0.1 (user "${game?.user?.name}", GM=${game?.user?.isGM})`);
+  log.info(`Initializing ${MODULE_TITLE} v1.1.0 (user "${game?.user?.name}", GM=${game?.user?.isGM})`);
   bootPhase("settings", () =>
     registerSettings(() => {
       // Live-apply setting changes to an open MultiView session.

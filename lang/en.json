@@ -3,12 +3,16 @@
     "settings": {
       "permissionMode": {
         "name": "Who may spectate",
-        "hint": "Controls which tokens a player is allowed to spectate. The GM can always spectate anything.",
+        "hint": "Controls which tokens a player is allowed to spectate. The GM can always spectate anything. NPC tokens are governed separately by 'Allow spectating NPC tokens'.",
         "gmOnly": "GM only",
         "ownedOnly": "Players: owned tokens only",
         "partyMembers": "Players: party members",
         "anyPlayerToken": "Players: any player-owned token",
-        "anyToken": "Players: any token"
+        "anyToken": "Players: any token (incl. NPCs)"
+      },
+      "allowNpcSpectate": {
+        "name": "Allow spectating NPC tokens",
+        "hint": "When on, players may also spectate NPC (non-player-owned) tokens, subject to the mode above and any per-token overrides. Off by default so players only see each other's perspectives. Individual NPCs can still be enabled or disabled from the spectator picker."
       },
       "maxCameras": {
         "name": "Maximum simultaneous cameras",
@@ -109,6 +113,8 @@
       "addView": "Add to MultiView",
       "stop": "Stop spectating",
       "optOut": "Toggle spectate opt-out",
+      "toggleNpc": "Toggle whether players may spectate this NPC",
+      "npc": "NPC",
       "current": "Spectating"
     },
     "disposition": {

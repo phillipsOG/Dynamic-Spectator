@@ -102,6 +102,8 @@ export interface PermissionDecision {
 /** Global module settings, resolved and typed. */
 export interface ResolvedSettings {
   permissionMode: PermissionMode;
+  /** Whether NPC (non-player-owned) tokens may be spectated by non-GM users. */
+  allowNpcSpectate: boolean;
   maxCameras: number;
   autoGrouping: boolean;
   elevationThreshold: number;

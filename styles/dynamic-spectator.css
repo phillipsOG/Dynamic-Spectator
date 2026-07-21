@@ -142,6 +142,17 @@
   color: var(--ds-accent);
   font-weight: 600;
 }
+.ds-npc-tag {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ds-muted);
+  border: 1px solid var(--ds-border);
+  border-radius: 3px;
+  padding: 0 4px;
+  line-height: 14px;
+}
 .ds-token-actions {
   display: flex;
   gap: 4px;
@@ -152,6 +163,9 @@
   display: grid;
   place-items: center;
 }
+/* NPC spectate toggle: dim when disabled, accent green when enabled. */
+.ds-npc-toggle { color: var(--ds-muted); }
+.ds-npc-toggle.active { color: #6fcf7f; }
 .ds-empty {
   color: var(--ds-muted);
   text-align: center;

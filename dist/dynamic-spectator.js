@@ -10,7 +10,7 @@ var __export = (target, all) => {
 };
 
 // src/constants.ts
-var MODULE_ID, MODULE_TITLE, SOCKET, FLAG_SCOPE, HOOKS, SETTINGS, PermissionMode, OVERLAY_FIELDS, DOM;
+var MODULE_ID, MODULE_TITLE, SOCKET, FLAG_SCOPE, TOKEN_FLAGS, HOOKS, SETTINGS, PermissionMode, OVERLAY_FIELDS, DOM;
 var init_constants = __esm({
   "src/constants.ts"() {
     "use strict";
@@ -18,6 +18,16 @@ var init_constants = __esm({
     MODULE_TITLE = "Dynamic Spectator";
     SOCKET = `module.${MODULE_ID}`;
     FLAG_SCOPE = MODULE_ID;
+    TOKEN_FLAGS = {
+      /** When true, non-GM users may never spectate this token. */
+      noSpectate: "noSpectate",
+      /**
+       * Per-token override for the "may NPCs be spectated" question. `true` forces
+       * this NPC spectatable and `false` blocks it, each regardless of the world
+       * {@link SETTINGS.allowNpcSpectate} default. Absent = follow the world default.
+       */
+      npcSpectatable: "npcSpectatable"
+    };
     HOOKS = {
       spectateStart: `${MODULE_ID}.spectateStart`,
       spectateStop: `${MODULE_ID}.spectateStop`,
@@ -29,6 +39,7 @@ var init_constants = __esm({
       // Permissions
       permissionMode: "permissionMode",
       perPlayerPermissions: "perPlayerPermissions",
+      allowNpcSpectate: "allowNpcSpectate",
       // MultiView core
       maxCameras: "maxCameras",
       autoGrouping: "autoGrouping",
@@ -103,7 +114,7 @@ var init_PermissionManager = __esm({
     PermissionManager = class {
       /** The effective mode for a specific user (per-player override, else global). */
       static modeFor(user) {
-        const global = game.settings.get(MODULE_ID, SETTINGS.permissionMode) ?? "owned-only" /* OwnedOnly */;
+        const global = game.settings.get(MODULE_ID, SETTINGS.permissionMode) ?? "any-player-token" /* AnyPlayerToken */;
         const overrides = game.settings.get(MODULE_ID, SETTINGS.perPlayerPermissions) ?? {};
         return overrides[user.id] ?? global;
       }
@@ -117,6 +128,25 @@ var init_PermissionManager = __esm({
       static hasPlayerOwner(token) {
         return Boolean(token.actor?.hasPlayerOwner);
       }
+      /** True if `token` is an NPC — i.e. it has no player owner. */
+      static isNpc(token) {
+        return !this.hasPlayerOwner(token);
+      }
+      /** The per-token NPC override: true (force on), false (force off), or undefined. */
+      static npcOverride(token) {
+        const v = token.document?.getFlag(FLAG_SCOPE, TOKEN_FLAGS.npcSpectatable);
+        return v === true ? true : v === false ? false : void 0;
+      }
+      /**
+       * Whether NPC tokens may be spectated for this token. The per-token override
+       * wins in either direction; otherwise the world `allowNpcSpectate` default
+       * applies. (Only meaningful for NPC tokens; player tokens ignore it.)
+       */
+      static npcSpectatable(token) {
+        const override = this.npcOverride(token);
+        if (override !== void 0) return override;
+        return Boolean(game.settings.get(MODULE_ID, SETTINGS.allowNpcSpectate));
+      }
       /**
        * The central decision. Returns both the boolean and a machine-readable reason
        * so the UI can explain *why* a token is greyed out.
@@ -124,23 +154,27 @@ var init_PermissionManager = __esm({
       static canSpectate(user, token) {
         if (!token?.document) return { allowed: false, reason: "no-token" };
         if (user.isGM) return { allowed: true, reason: "gm" };
-        const optedOut = Boolean(token.document.getFlag(FLAG_SCOPE, "noSpectate"));
+        const optedOut = Boolean(token.document.getFlag(FLAG_SCOPE, TOKEN_FLAGS.noSpectate));
         if (optedOut) return { allowed: false, reason: "opted-out" };
         const mode = this.modeFor(user);
+        if (mode === "gm-only" /* GMOnly */) return { allowed: false, reason: "gm-only" };
         const owns = token.document.testUserPermission(user, "OWNER");
+        if (owns) return { allowed: true, reason: "owned" };
+        if (this.isNpc(token)) {
+          const override = this.npcOverride(token);
+          if (override === true) return { allowed: true, reason: "npc-allowed" };
+          if (override === false) return { allowed: false, reason: "npc-blocked" };
+          if (mode === "any-token" /* AnyToken */) return { allowed: true, reason: "any" };
+          return Boolean(game.settings.get(MODULE_ID, SETTINGS.allowNpcSpectate)) ? { allowed: true, reason: "npc-allowed" } : { allowed: false, reason: "npc" };
+        }
         switch (mode) {
-          case "gm-only" /* GMOnly */:
-            return { allowed: false, reason: "gm-only" };
           case "owned-only" /* OwnedOnly */:
-            return owns ? { allowed: true, reason: "owned" } : { allowed: false, reason: "not-owned" };
+            return { allowed: false, reason: "not-owned" };
           case "party-members" /* PartyMembers */:
-            if (owns) return { allowed: true, reason: "owned" };
             return this.isPartyToken(token) ? { allowed: true, reason: "party" } : { allowed: false, reason: "not-party" };
           case "any-player-token" /* AnyPlayerToken */:
-            if (owns) return { allowed: true, reason: "owned" };
-            return this.hasPlayerOwner(token) ? { allowed: true, reason: "player-token" } : { allowed: false, reason: "npc" };
           case "any-token" /* AnyToken */:
-            return { allowed: true, reason: "any" };
+            return { allowed: true, reason: "player-token" };
           default:
             return { allowed: false, reason: "unknown-mode" };
         }
@@ -156,8 +190,17 @@ var init_PermissionManager = __esm({
       }
       /** Set / clear a token's per-token opt-out flag (GM or token owner only). */
       static async setOptOut(token, optOut) {
-        if (optOut) await token.document.setFlag(FLAG_SCOPE, "noSpectate", true);
-        else await token.document.unsetFlag(FLAG_SCOPE, "noSpectate");
+        if (optOut) await token.document.setFlag(FLAG_SCOPE, TOKEN_FLAGS.noSpectate, true);
+        else await token.document.unsetFlag(FLAG_SCOPE, TOKEN_FLAGS.noSpectate);
+      }
+      /**
+       * Set / clear a token's per-token NPC opt-in override (GM only). `true` forces
+       * the NPC spectatable, `false` forces it off, `null` clears the override so the
+       * world `allowNpcSpectate` default applies again.
+       */
+      static async setNpcSpectatable(token, value) {
+        if (value === null) await token.document.unsetFlag(FLAG_SCOPE, TOKEN_FLAGS.npcSpectatable);
+        else await token.document.setFlag(FLAG_SCOPE, TOKEN_FLAGS.npcSpectatable, value);
       }
       /** Persist a per-player override mode (GM only, world scope). */
       static async setPlayerOverride(userId, mode) {
@@ -242,7 +285,7 @@ function registerSettings(onChange) {
     scope: "world",
     config: true,
     type: String,
-    default: "owned-only" /* OwnedOnly */,
+    default: "any-player-token" /* AnyPlayerToken */,
     choices: {
       ["gm-only" /* GMOnly */]: L("permissionMode.gmOnly"),
       ["owned-only" /* OwnedOnly */]: L("permissionMode.ownedOnly"),
@@ -257,6 +300,15 @@ function registerSettings(onChange) {
     config: false,
     type: Object,
     default: {},
+    onChange: change
+  });
+  game.settings.register(MODULE_ID, SETTINGS.allowNpcSpectate, {
+    name: L("allowNpcSpectate.name"),
+    hint: L("allowNpcSpectate.hint"),
+    scope: "world",
+    config: true,
+    type: Boolean,
+    default: false,
     onChange: change
   });
   game.settings.register(MODULE_ID, SETTINGS.maxCameras, {
@@ -470,7 +522,8 @@ function getSettings() {
     defaultOverlayFields()
   );
   return {
-    permissionMode: read(SETTINGS.permissionMode, "owned-only" /* OwnedOnly */),
+    permissionMode: read(SETTINGS.permissionMode, "any-player-token" /* AnyPlayerToken */),
+    allowNpcSpectate: read(SETTINGS.allowNpcSpectate, false),
     maxCameras: read(SETTINGS.maxCameras, 4),
     autoGrouping: read(SETTINGS.autoGrouping, true),
     elevationThreshold: read(SETTINGS.elevationThreshold, 5),
@@ -1951,9 +2004,136 @@ var CameraLock = class {
   }
 };
 
+// src/spectator/OcclusionController.ts
+init_constants();
+var OcclusionController = class _OcclusionController {
+  /** The token whose roofs we are currently revealing, or null when inactive. */
+  spectated = null;
+  /** When true, only the spectated token drives occlusion (POV clamp). */
+  exclusive = true;
+  /** Saved original method for manual-wrapper teardown. */
+  original = null;
+  /** lib-wrapper registration handle / flag. */
+  wrapperInstalled = false;
+  /** The TokenLayer class whose prototype we patched (cached for teardown). */
+  layerClass = null;
+  /** lib-wrapper target — resolved from CONFIG so it is version-stable. */
+  static TARGET = "CONFIG.Canvas.layers.tokens.layerClass.prototype._getOccludableTokens";
+  get active() {
+    return this.spectated !== null;
+  }
+  /** Begin revealing the roofs `token` is under on this client. */
+  activate(token, exclusive = true) {
+    if (!token?.document) {
+      log.warn("OcclusionController.activate called with an invalid token");
+      return;
+    }
+    this.spectated = token;
+    this.exclusive = exclusive;
+    this.installWrapper();
+    this.refreshOcclusion();
+    log.debug(`OcclusionController active on "${token.name}" (exclusive=${exclusive})`);
+  }
+  /** Stop revealing roofs and restore normal occlusion. */
+  deactivate() {
+    if (!this.active) return;
+    this.spectated = null;
+    this.removeWrapper();
+    this.refreshOcclusion();
+    log.debug("OcclusionController deactivated; occlusion restored");
+  }
+  /** Swap the target token without reinstalling the wrapper (retarget). */
+  setTarget(token, exclusive = true) {
+    if (!token?.document) return;
+    this.spectated = token;
+    this.exclusive = exclusive;
+    this.installWrapper();
+    this.refreshOcclusion();
+  }
+  /** Recompute occlusion for the current target (e.g. after it moved). */
+  refresh() {
+    if (!this.active) return;
+    this.refreshOcclusion();
+  }
+  // -- internals -------------------------------------------------------------
+  /** The occludable-token set installed while spectating. */
+  predicate(original, self) {
+    const target = this.spectated;
+    if (!target) return original.call(self);
+    if (this.exclusive) return [target];
+    const base = original.call(self) ?? [];
+    return base.includes(target) ? base : [...base, target];
+  }
+  resolveLayerClass() {
+    const fromConfig = CONFIG?.Canvas?.layers?.tokens?.layerClass;
+    if (fromConfig?.prototype) return fromConfig;
+    const layer = canvas?.tokens;
+    return layer?.constructor ?? null;
+  }
+  installWrapper() {
+    if (this.wrapperInstalled) return;
+    if (typeof libWrapper !== "undefined" && libWrapper?.register) {
+      const self2 = this;
+      libWrapper.register(
+        MODULE_ID,
+        _OcclusionController.TARGET,
+        function(wrapped) {
+          return self2.predicate(wrapped, this);
+        },
+        "MIXED"
+      );
+      this.wrapperInstalled = true;
+      log.debug("Installed _getOccludableTokens wrapper via lib-wrapper");
+      return;
+    }
+    const cls = this.resolveLayerClass();
+    if (!cls?.prototype?._getOccludableTokens) {
+      log.debug("TokenLayer#_getOccludableTokens not available; roof reveal skipped");
+      return;
+    }
+    this.layerClass = cls;
+    this.original = cls.prototype._getOccludableTokens;
+    const original = this.original;
+    const self = this;
+    cls.prototype._getOccludableTokens = function() {
+      return self.predicate(original, this);
+    };
+    this.wrapperInstalled = true;
+    log.debug("Installed _getOccludableTokens wrapper via manual prototype patch");
+  }
+  removeWrapper() {
+    if (!this.wrapperInstalled) return;
+    if (typeof libWrapper !== "undefined" && libWrapper?.unregister) {
+      try {
+        libWrapper.unregister(MODULE_ID, _OcclusionController.TARGET);
+      } catch (err) {
+        log.warn("lib-wrapper unregister failed (already removed?)", err);
+      }
+    } else if (this.layerClass && this.original) {
+      this.layerClass.prototype._getOccludableTokens = this.original;
+    }
+    this.original = null;
+    this.layerClass = null;
+    this.wrapperInstalled = false;
+  }
+  /** Ask core to recompute overhead-tile occlusion under the new subject set. */
+  refreshOcclusion() {
+    try {
+      canvas?.perception?.update({ refreshOcclusion: true }, true);
+    } catch {
+      try {
+        canvas?.perception?.update({ refreshOcclusion: true });
+      } catch (err) {
+        log.debug("occlusion refresh failed", err);
+      }
+    }
+  }
+};
+
 // src/spectator/SpectatorManager.ts
 var SpectatorManager = class {
   vision = new VisionController();
+  occlusion = new OcclusionController();
   camera = new CameraLock();
   currentTokenId = null;
   /** Actor behind the spectated token, for cross-scene re-follow. */
@@ -1989,6 +2169,7 @@ var SpectatorManager = class {
     }
     const retarget = this.active;
     this.vision.activate(token, exclusivePov);
+    this.occlusion.activate(token, exclusivePov);
     if (retarget) this.camera.retarget(token);
     else this.camera.lock(token, this.cameraConfig());
     this.setIndicator(this.currentTokenId, false);
@@ -2008,6 +2189,7 @@ var SpectatorManager = class {
     const prev = this.currentTokenId;
     this.setIndicator(prev, false);
     this.vision.deactivate();
+    this.occlusion.deactivate();
     this.camera.release();
     this.currentTokenId = null;
     this.currentActorId = null;
@@ -2042,6 +2224,7 @@ var SpectatorManager = class {
   onTokenUpdate(tokenId) {
     if (this.currentTokenId !== tokenId) return;
     this.vision.refresh();
+    this.occlusion.refresh();
   }
   /** The spectated token was removed / left the scene — tear down cleanly. */
   onTokenGone(tokenId) {
@@ -2340,7 +2523,8 @@ var SpectatorPicker = class _SpectatorPicker extends HandlebarsApplicationMixin2
       spectate: _SpectatorPicker.onSpectate,
       addView: _SpectatorPicker.onAddView,
       stop: _SpectatorPicker.onStop,
-      optOut: _SpectatorPicker.onOptOut
+      optOut: _SpectatorPicker.onOptOut,
+      toggleNpc: _SpectatorPicker.onToggleNpc
     }
   };
   static PARTS = {
@@ -2355,6 +2539,7 @@ var SpectatorPicker = class _SpectatorPicker extends HandlebarsApplicationMixin2
     const mvTokenIds = new Set(s.multiview.descriptors.map((d) => d.tokenId));
     const rows = placeables.map((t) => {
       const decision = PermissionManager.canSpectate(user, t);
+      const isNpc = PermissionManager.isNpc(t);
       return {
         tokenId: t.id,
         name: t.name,
@@ -2365,6 +2550,8 @@ var SpectatorPicker = class _SpectatorPicker extends HandlebarsApplicationMixin2
         current: s.spectator.tokenId === t.id,
         inMultiView: mvTokenIds.has(t.id),
         reason: decision.reason,
+        isNpc,
+        npcOptIn: isNpc && PermissionManager.npcSpectatable(t),
         allowed: decision.allowed
       };
     }).filter((r) => r.allowed).sort((a, b) => a.name.localeCompare(b.name));
@@ -2426,10 +2613,20 @@ var SpectatorPicker = class _SpectatorPicker extends HandlebarsApplicationMixin2
     const id = _SpectatorPicker.tokenIdFrom(target);
     const token = id ? canvas?.tokens?.get(id) : null;
     if (!token) return;
-    const current = Boolean(token.document.getFlag(MODULE_ID, "noSpectate"));
+    const current = Boolean(token.document.getFlag(MODULE_ID, TOKEN_FLAGS.noSpectate));
     await PermissionManager.setOptOut(token, !current);
     this.render();
     log.debug(`opt-out ${!current} for ${token.name}`);
+  }
+  /** GM-only: toggle whether players may spectate this specific NPC token. */
+  static async onToggleNpc(_event, target) {
+    const id = _SpectatorPicker.tokenIdFrom(target);
+    const token = id ? canvas?.tokens?.get(id) : null;
+    if (!token) return;
+    const current = PermissionManager.npcSpectatable(token);
+    await PermissionManager.setNpcSpectatable(token, !current);
+    this.render();
+    log.debug(`npc-spectatable ${!current} for ${token.name}`);
   }
   /** Singleton open helper. */
   static show() {
@@ -2940,7 +3137,7 @@ var TEMPLATES = [
 ];
 function buildApi() {
   return {
-    version: "1.0.1",
+    version: "1.1.0",
     /** Spectate a token by id. */
     spectate: (tokenId, exclusive = true) => DS.spectator?.start(tokenId, exclusive),
     stopSpectate: () => DS.spectator?.stop(),
@@ -2989,7 +3186,7 @@ function bootPhase(phase, fn) {
   }
 }
 Hooks.once("init", () => {
-  log.info(`Initializing ${MODULE_TITLE} v1.0.1 (user "${game?.user?.name}", GM=${game?.user?.isGM})`);
+  log.info(`Initializing ${MODULE_TITLE} v1.1.0 (user "${game?.user?.name}", GM=${game?.user?.isGM})`);
   bootPhase(
     "settings",
     () => registerSettings(() => {

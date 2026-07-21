@@ -8,7 +8,7 @@
  * typing without re-rendering the whole list.
  */
 
-import { MODULE_ID } from "../constants.js";
+import { MODULE_ID, TOKEN_FLAGS } from "../constants.js";
 import { PermissionManager } from "../permissions/PermissionManager.js";
 import { state } from "../state.js";
 import { log } from "../util/logger.js";
@@ -26,6 +26,10 @@ interface Row {
   current: boolean;
   inMultiView: boolean;
   reason: string;
+  /** True when the token has no player owner (an NPC). */
+  isNpc: boolean;
+  /** Effective "NPCs may be spectated" state for this token (for the GM toggle). */
+  npcOptIn: boolean;
 }
 
 export class SpectatorPicker extends HandlebarsApplicationMixin(ApplicationV2) {
@@ -43,7 +47,8 @@ export class SpectatorPicker extends HandlebarsApplicationMixin(ApplicationV2) {
       spectate: SpectatorPicker.onSpectate,
       addView: SpectatorPicker.onAddView,
       stop: SpectatorPicker.onStop,
-      optOut: SpectatorPicker.onOptOut
+      optOut: SpectatorPicker.onOptOut,
+      toggleNpc: SpectatorPicker.onToggleNpc
     }
   };
 
@@ -63,6 +68,7 @@ export class SpectatorPicker extends HandlebarsApplicationMixin(ApplicationV2) {
     const rows: Row[] = placeables
       .map((t) => {
         const decision = PermissionManager.canSpectate(user, t);
+        const isNpc = PermissionManager.isNpc(t);
         return {
           tokenId: t.id,
           name: t.name,
@@ -73,6 +79,8 @@ export class SpectatorPicker extends HandlebarsApplicationMixin(ApplicationV2) {
           current: s.spectator.tokenId === t.id,
           inMultiView: mvTokenIds.has(t.id),
           reason: decision.reason,
+          isNpc,
+          npcOptIn: isNpc && PermissionManager.npcSpectatable(t),
           allowed: decision.allowed
         } as Row & { allowed: boolean };
       })
@@ -146,10 +154,21 @@ export class SpectatorPicker extends HandlebarsApplicationMixin(ApplicationV2) {
     const id = SpectatorPicker.tokenIdFrom(target);
     const token = id ? canvas?.tokens?.get(id) : null;
     if (!token) return;
-    const current = Boolean(token.document.getFlag(MODULE_ID, "noSpectate"));
+    const current = Boolean(token.document.getFlag(MODULE_ID, TOKEN_FLAGS.noSpectate));
     await PermissionManager.setOptOut(token, !current);
     this.render();
     log.debug(`opt-out ${!current} for ${token.name}`);
+  }
+
+  /** GM-only: toggle whether players may spectate this specific NPC token. */
+  static async onToggleNpc(this: SpectatorPicker, _event: Event, target: HTMLElement): Promise<void> {
+    const id = SpectatorPicker.tokenIdFrom(target);
+    const token = id ? canvas?.tokens?.get(id) : null;
+    if (!token) return;
+    const current = PermissionManager.npcSpectatable(token);
+    await PermissionManager.setNpcSpectatable(token, !current);
+    this.render();
+    log.debug(`npc-spectatable ${!current} for ${token.name}`);
   }
 
   /** Singleton open helper. */

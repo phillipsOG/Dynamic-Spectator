@@ -16,9 +16,11 @@ src/
     PermissionManager.ts  "May user U spectate token T?" + opt-out/overrides.
 
   spectator/
-    VisionController.ts   The reversible Token#_isVisionSource wrapper (POV).
-    CameraLock.ts         Main-canvas camera lock/follow (single spectate).
-    SpectatorManager.ts   Orchestrates permission + vision + camera + indicator.
+    VisionController.ts     The reversible Token#_isVisionSource wrapper (POV).
+    OcclusionController.ts  Reversible TokenLayer#_getOccludableTokens wrapper
+                            (reveals roofs above the spectated token; height-aware).
+    CameraLock.ts           Main-canvas camera lock/follow (single spectate).
+    SpectatorManager.ts     Orchestrates permission + vision + occlusion + camera.
 
   multiview/
     LayoutEngine.ts       Pure adaptive CCTV tiler (aspect aware).

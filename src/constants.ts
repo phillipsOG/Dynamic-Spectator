@@ -13,6 +13,18 @@ export const SOCKET = `module.${MODULE_ID}` as const;
 /** Flag scope used for per-token / per-user persisted data. */
 export const FLAG_SCOPE = MODULE_ID;
 
+/** Per-token flag keys (all stored under {@link FLAG_SCOPE}). */
+export const TOKEN_FLAGS = {
+  /** When true, non-GM users may never spectate this token. */
+  noSpectate: "noSpectate",
+  /**
+   * Per-token override for the "may NPCs be spectated" question. `true` forces
+   * this NPC spectatable and `false` blocks it, each regardless of the world
+   * {@link SETTINGS.allowNpcSpectate} default. Absent = follow the world default.
+   */
+  npcSpectatable: "npcSpectatable"
+} as const;
+
 /** Custom hooks other modules / macros can listen to. */
 export const HOOKS = {
   spectateStart: `${MODULE_ID}.spectateStart`,
@@ -27,6 +39,7 @@ export const SETTINGS = {
   // Permissions
   permissionMode: "permissionMode",
   perPlayerPermissions: "perPlayerPermissions",
+  allowNpcSpectate: "allowNpcSpectate",
 
   // MultiView core
   maxCameras: "maxCameras",

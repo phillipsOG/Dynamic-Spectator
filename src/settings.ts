@@ -48,7 +48,7 @@ export function registerSettings(onChange?: () => void): void {
     scope: "world",
     config: true,
     type: String,
-    default: PermissionMode.OwnedOnly,
+    default: PermissionMode.AnyPlayerToken,
     choices: {
       [PermissionMode.GMOnly]: L("permissionMode.gmOnly"),
       [PermissionMode.OwnedOnly]: L("permissionMode.ownedOnly"),
@@ -65,6 +65,19 @@ export function registerSettings(onChange?: () => void): void {
     config: false,
     type: Object,
     default: {},
+    onChange: change
+  });
+
+  // Whether NPC (non-player-owned) tokens may be spectated at all. Off by default
+  // so players only ever see each other's perspectives unless the GM opts in.
+  // A per-token flag (TOKEN_FLAGS.npcSpectatable) can override this either way.
+  game.settings.register(MODULE_ID, SETTINGS.allowNpcSpectate, {
+    name: L("allowNpcSpectate.name"),
+    hint: L("allowNpcSpectate.hint"),
+    scope: "world",
+    config: true,
+    type: Boolean,
+    default: false,
     onChange: change
   });
 
@@ -309,7 +322,8 @@ export function getSettings(): ResolvedSettings {
   );
 
   return {
-    permissionMode: read<PermissionMode>(SETTINGS.permissionMode, PermissionMode.OwnedOnly),
+    permissionMode: read<PermissionMode>(SETTINGS.permissionMode, PermissionMode.AnyPlayerToken),
+    allowNpcSpectate: read<boolean>(SETTINGS.allowNpcSpectate, false),
     maxCameras: read<number>(SETTINGS.maxCameras, 4),
     autoGrouping: read<boolean>(SETTINGS.autoGrouping, true),
     elevationThreshold: read<number>(SETTINGS.elevationThreshold, 5),

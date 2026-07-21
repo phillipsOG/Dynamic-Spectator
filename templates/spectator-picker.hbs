@@ -26,6 +26,7 @@
         <span class="ds-token-name">{{this.name}}</span>
         <span class="ds-token-meta">
           <span class="ds-disposition disp-{{this.disposition}}">{{this.dispositionLabel}}</span>
+          {{#if this.isNpc}}<span class="ds-npc-tag">{{localize 'dynamic-spectator.picker.npc'}}</span>{{/if}}
           <span class="ds-token-elev"><i class="fa-solid fa-mountain"></i> {{this.elevation}}</span>
           {{#if this.inMultiView}}<span class="ds-inview"><i class="fa-solid fa-table-cells-large"></i></span>{{/if}}
           {{#if this.current}}<span class="ds-current-tag">{{localize 'dynamic-spectator.picker.current'}}</span>{{/if}}
@@ -39,9 +40,17 @@
           <i class="fa-solid fa-table-cells-large"></i>
         </button>
         {{#if ../isGM}}
-        <button type="button" class="ds-btn" data-action="optOut" title="{{localize 'dynamic-spectator.picker.optOut'}}">
-          <i class="fa-solid fa-ban"></i>
-        </button>
+          {{#if this.isNpc}}
+          <button type="button" class="ds-btn ds-npc-toggle {{#if this.npcOptIn}}active{{/if}}"
+                  data-action="toggleNpc"
+                  title="{{localize 'dynamic-spectator.picker.toggleNpc'}}">
+            <i class="fa-solid {{#if this.npcOptIn}}fa-user-check{{else}}fa-user-slash{{/if}}"></i>
+          </button>
+          {{else}}
+          <button type="button" class="ds-btn" data-action="optOut" title="{{localize 'dynamic-spectator.picker.optOut'}}">
+            <i class="fa-solid fa-ban"></i>
+          </button>
+          {{/if}}
         {{/if}}
       </div>
     </li>

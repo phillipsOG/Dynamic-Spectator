@@ -102,12 +102,22 @@ Set **Who may spectate** in module settings:
 | GM only | Only the GM may spectate. |
 | Owned only | Players spectate tokens they own. |
 | Party members | Owned + any active player's owned tokens. |
-| Any player token | Any token with a player owner. |
-| Any token | Anything on the scene (still POV-clamped). |
+| Any player token | Any token with a player owner **(default)**. |
+| Any token | Anything on the scene, NPCs included (still POV-clamped). |
+
+**NPC tokens** are a separate axis. They are only spectatable when **Allow
+spectating NPC tokens** is enabled (off by default), so out of the box players
+can spectate each other but not NPCs. Individual NPCs can be force-enabled or
+force-disabled from the spectator picker (GM only), overriding the world
+default either way.
 
 Additional controls: **per-token opt-out** (GM sets a "no spectate" flag on
-sensitive tokens) and **per-player overrides** (Dashboard → Permission column).
-The GM can always spectate.
+sensitive player tokens) and **per-player overrides** (Dashboard → Permission
+column). The GM can always spectate.
+
+Spectating is **height-aware**: overhead / roof tiles above the spectated token
+are revealed so you see inside a building or on an upper floor rather than the
+rooftop, following the token as it changes elevation.
 
 ---
 

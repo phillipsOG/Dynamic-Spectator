@@ -19,10 +19,12 @@ import { getSettings } from "../settings.js";
 import type { CameraConfig } from "../types/index.js";
 import { log } from "../util/logger.js";
 import { CameraLock } from "./CameraLock.js";
+import { OcclusionController } from "./OcclusionController.js";
 import { VisionController } from "./VisionController.js";
 
 export class SpectatorManager {
   private readonly vision = new VisionController();
+  private readonly occlusion = new OcclusionController();
   private readonly camera = new CameraLock();
   private currentTokenId: string | null = null;
   /** Actor behind the spectated token, for cross-scene re-follow. */
@@ -65,6 +67,9 @@ export class SpectatorManager {
     const retarget = this.active;
 
     this.vision.activate(token, exclusivePov);
+    // Reveal the roofs / overhead tiles this token is under so we see inside
+    // buildings and on upper floors rather than the rooftop (height-aware).
+    this.occlusion.activate(token, exclusivePov);
     if (retarget) this.camera.retarget(token);
     else this.camera.lock(token, this.cameraConfig());
 
@@ -87,6 +92,7 @@ export class SpectatorManager {
     const prev = this.currentTokenId;
     this.setIndicator(prev, false);
     this.vision.deactivate();
+    this.occlusion.deactivate();
     this.camera.release();
     this.currentTokenId = null;
     this.currentActorId = null;
@@ -125,6 +131,8 @@ export class SpectatorManager {
   onTokenUpdate(tokenId: string): void {
     if (this.currentTokenId !== tokenId) return;
     this.vision.refresh();
+    // Keep roof reveal in step as the token moves between/into structures.
+    this.occlusion.refresh();
   }
 
   /** The spectated token was removed / left the scene — tear down cleanly. */

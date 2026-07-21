@@ -3,6 +3,36 @@
 All notable changes to Dynamic Spectator are documented here. This project
 adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.1.0] — 2026-07-21
+
+### Added
+
+- **Spectate any player token by default.** The default permission mode is now
+  "any player-owned token", so players can spectate each other's characters out
+  of the box rather than only tokens they personally own. GMs can still tighten
+  this (owned only / party / GM only) or widen it (any token) in settings, and
+  per-player overrides still apply.
+- **NPC spectate toggle.** A new world setting, **Allow spectating NPC tokens**
+  (off by default), governs whether NPC (non-player-owned) tokens may be
+  spectated at all. NPCs are a separate axis from the mode ladder, so enabling
+  player-token spectating never exposes NPC perspectives unless you opt in.
+- **Per-token NPC override.** From the spectator picker a GM can force a single
+  NPC spectatable or non-spectatable (a `user-check` / `user-slash` toggle on
+  NPC rows), overriding the world default either way — handy for a familiar,
+  companion, or a plot NPC the party is meant to follow. NPC rows are badged.
+
+### Fixed / Changed
+
+- **Height-aware roof reveal while spectating.** Spectating a token that is
+  inside a building or on an upper floor now reveals the overhead / roof tiles
+  above it instead of showing the rooftop. Implemented with a reversible
+  `TokenLayer#_getOccludableTokens` wrapper (lib-wrapper when present, manual
+  fallback otherwise) that adds the spectated token to core's occlusion subject
+  set — so FADE, RADIAL and VISION occlusion modes all reveal correctly, the
+  reveal follows the token up and down floors, and in exclusive POV mode only
+  the spectated token drives occlusion (no information leak). Occlusion is
+  restored exactly on stop.
+
 ## [1.0.1] — 2026-07-21
 
 ### Fixed / Changed
