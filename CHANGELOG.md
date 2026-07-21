@@ -3,6 +3,61 @@
 All notable changes to Dynamic Spectator are documented here. This project
 adheres to [Semantic Versioning](https://semver.org/).
 
+## [2.0.0] — 2026-07-21
+
+### Removed
+
+- **MultiView.** The dynamic multi-camera system is gone: the viewport grid, the
+  layout and grouping engines, off-screen scene capture, the render scheduler,
+  the streaming mode, the per-viewport overlays, and the observe presets. It was
+  the most expensive and most core-version-fragile part of the module, and
+  spectating a single token is what the module is actually for. Removing it cuts
+  the bundle roughly in half and drops every GPU-side moving part.
+- With it go the settings `maxCameras`, `autoGrouping`, `elevationThreshold`,
+  `groupingDistance`, `viewportPadding`, `overlayFields`, `streamingMode`,
+  `transitionSpeed`, `performanceMode`, `renderScale`, `frameRateCap`,
+  `secondaryCadence` and `profiling`; the **Shift+M** keybinding and the grid
+  scene-control tool; the dashboard's observe presets and diagnostics readout;
+  the API methods `openMultiView`, `closeMultiView`, `toggleMultiView`,
+  `addView`, `observeParty`, `observeAuto`, `managers.multiview`,
+  `managers.multiviewApp` and `profiler`; and the hooks `multiViewOpen`,
+  `multiViewClose` and `viewportsChanged`. Stale settings are simply ignored by
+  core, so no migration is needed.
+
+### Added
+
+- **Spectating bar.** A small pill above the hotbar names the token you are
+  watching and shows the `Esc` affordance; clicking it stops spectating. It
+  replaces the per-spectate toast notification, which fired on every retarget.
+
+### Changed
+
+- **Escape now reliably stops spectating.** The keybinding registers at
+  `KEYBINDING_PRECEDENCE.PRIORITY` so it beats core's own Escape handler, and it
+  only consumes the key while a session is actually live — Escape still closes
+  windows and deselects tokens the rest of the time.
+- **Slimmer spectator picker.** Narrower (264px) with compact rows: the row
+  itself is the spectate/stop target, the "Add to MultiView" button is gone, and
+  the GM's opt-out / NPC buttons only appear on hover. Rows are keyboard
+  operable (Tab, then Enter or Space).
+- **Slimmer GM dashboard**, now just the player list and permission overrides.
+
+### Fixed
+
+- **The dashboard's per-player permission dropdown showed the wrong value.** It
+  never marked an option `selected`, so a stored override always displayed as
+  "default" and a GM had no way to see which players had one. The selected
+  option is now resolved in `_prepareContext` (core ships no `eq` Handlebars
+  helper), and an override left behind by an older version that no longer maps
+  to a known mode falls back to "default" instead of showing an arbitrary
+  option.
+- **The dropdown listed raw enum values** ("gm-only", "owned-only", …) rather
+  than the localized labels that already existed for the world setting. Both now
+  read from one `PERMISSION_MODE_LABELS` map so they cannot drift.
+- **Changing the dropdown could save a stale value.** It was dispatched through
+  ApplicationV2's action map, which fires on `click` — i.e. as the dropdown
+  opens, before a new option is picked. It now listens for `change`.
+
 ## [1.1.0] — 2026-07-21
 
 ### Added

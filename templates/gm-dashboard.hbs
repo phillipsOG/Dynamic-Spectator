@@ -1,26 +1,11 @@
 {{!--
   GM dashboard body. Rendered by GMDashboard (ApplicationV2).
-  Context: { players, hasPlayers, multiViewOpen, viewportCount, permissionModes, diagnostics }.
+  Context: { players, hasPlayers }, where each player carries a prebuilt
+  permissionOptions list ({ value, label, selected }) — core ships no `eq`
+  helper, so the selected option is resolved in _prepareContext, not here.
+  The <select> is wired on `change` in _onRender rather than via [data-action].
 --}}
 <div class="ds-dashboard-body">
-  <section class="ds-dash-section">
-    <h3><i class="fa-solid fa-eye"></i> {{localize 'dynamic-spectator.dashboard.observe'}}</h3>
-    <div class="ds-dash-grid">
-      <button type="button" data-action="observeParty"><i class="fa-solid fa-users"></i> {{localize 'dynamic-spectator.dashboard.party'}}</button>
-      <button type="button" data-action="observeCombatants"><i class="fa-solid fa-swords"></i> {{localize 'dynamic-spectator.dashboard.combatants'}}</button>
-      <button type="button" data-action="observeNpcs"><i class="fa-solid fa-ghost"></i> {{localize 'dynamic-spectator.dashboard.npcs'}}</button>
-      <button type="button" data-action="observeElevation"><i class="fa-solid fa-layer-group"></i> {{localize 'dynamic-spectator.dashboard.elevation'}}</button>
-    </div>
-    <div class="ds-dash-grid">
-      {{#if multiViewOpen}}
-      <button type="button" class="ds-danger" data-action="closeMultiView"><i class="fa-solid fa-xmark"></i> {{localize 'dynamic-spectator.dashboard.closeMultiView'}}</button>
-      {{else}}
-      <button type="button" data-action="openMultiView"><i class="fa-solid fa-table-cells-large"></i> {{localize 'dynamic-spectator.dashboard.openMultiView'}}</button>
-      {{/if}}
-      <span class="ds-dash-count">{{localize 'dynamic-spectator.dashboard.viewports'}} {{viewportCount}}</span>
-    </div>
-  </section>
-
   <section class="ds-dash-section">
     <h3><i class="fa-solid fa-user-group"></i> {{localize 'dynamic-spectator.dashboard.players'}}</h3>
     {{#if hasPlayers}}
@@ -34,10 +19,9 @@
             <small>{{this.character}}</small>
           </td>
           <td class="ds-player-perm">
-            <select data-action="setPermission">
-              <option value="default">{{localize 'dynamic-spectator.dashboard.default'}}</option>
-              {{#each ../permissionModes}}
-              <option value="{{this}}">{{this}}</option>
+            <select data-ds-permission title="{{localize 'dynamic-spectator.dashboard.permission'}}">
+              {{#each this.permissionOptions}}
+              <option value="{{this.value}}" {{#if this.selected}}selected{{/if}}>{{this.label}}</option>
               {{/each}}
             </select>
           </td>
@@ -54,15 +38,4 @@
     <p class="ds-empty">—</p>
     {{/if}}
   </section>
-
-  {{#if diagnostics}}
-  <section class="ds-dash-section ds-diagnostics">
-    <h3><i class="fa-solid fa-gauge-high"></i> {{localize 'dynamic-spectator.dashboard.diagnostics'}}</h3>
-    <div class="ds-diag-row">
-      <span>FPS: <b>{{diagnostics.fps}}</b></span>
-      <span>Budget: <b>{{diagnostics.captureBudget}}</b></span>
-      <span>Frame: <b>{{diagnostics.frame}}</b></span>
-    </div>
-  </section>
-  {{/if}}
 </div>

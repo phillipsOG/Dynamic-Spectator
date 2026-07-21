@@ -5,9 +5,6 @@
  * Runs on the PIXI ticker but uses a wall-clock delta so smoothing feels
  * identical at 30fps and 144fps. The previous camera position is captured on
  * lock and restored on release, so spectating never strands the user's view.
- *
- * This drives single-token spectator mode. MultiView viewports use the separate
- * CameraController (off-screen), because they must not move the shared canvas.
  */
 
 import { CameraMode } from "../constants.js";

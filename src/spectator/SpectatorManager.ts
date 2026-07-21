@@ -6,8 +6,8 @@
  *   2. VisionController  — present the token's true POV (vision/light/fog).
  *   3. CameraLock        — lock and follow the camera.
  *
- * It also owns the on-canvas "you are spectating" indicator and emits the public
- * `spectateStart` / `spectateStop` hooks so other modules can react.
+ * It also owns the on-canvas ring and the on-screen SpectateBar, and emits the
+ * public `spectateStart` / `spectateStop` hooks so other modules can react.
  *
  * Exactly one token is spectated at a time on a given client. Starting a new
  * spectate transparently retargets the existing session (no flicker).
@@ -17,6 +17,7 @@ import { FLAG_SCOPE, HOOKS } from "../constants.js";
 import { PermissionManager } from "../permissions/PermissionManager.js";
 import { getSettings } from "../settings.js";
 import type { CameraConfig } from "../types/index.js";
+import { SpectateBar } from "../ui/SpectateBar.js";
 import { log } from "../util/logger.js";
 import { CameraLock } from "./CameraLock.js";
 import { OcclusionController } from "./OcclusionController.js";
@@ -26,6 +27,7 @@ export class SpectatorManager {
   private readonly vision = new VisionController();
   private readonly occlusion = new OcclusionController();
   private readonly camera = new CameraLock();
+  private readonly bar = new SpectateBar();
   private currentTokenId: string | null = null;
   /** Actor behind the spectated token, for cross-scene re-follow. */
   private currentActorId: string | null = null;
@@ -78,10 +80,11 @@ export class SpectatorManager {
     this.currentActorId = token.actor?.id ?? null;
     this.setIndicator(token.id, true);
 
+    // The bar replaces a toast: it stays for the whole session and carries the
+    // Escape hint, so the way out is always on screen.
+    this.bar.show(token.name, () => this.stop());
+
     Hooks.callAll(HOOKS.spectateStart, { tokenId: token.id, exclusive: exclusivePov });
-    ui.notifications.info(
-      game.i18n.format("dynamic-spectator.notify.spectating", { name: token.name })
-    );
     log.info(`Spectating "${token.name}"`);
     return true;
   }
@@ -91,6 +94,7 @@ export class SpectatorManager {
     if (!this.active) return;
     const prev = this.currentTokenId;
     this.setIndicator(prev, false);
+    this.bar.hide();
     this.vision.deactivate();
     this.occlusion.deactivate();
     this.camera.release();
@@ -150,8 +154,8 @@ export class SpectatorManager {
     const token = canvas?.tokens?.get(tokenId);
     if (!token) return;
     try {
-      // Store on a private field the ViewportOverlay / token HUD can read; the
-      // actual ring is drawn by refreshToken (see controls.ts hook).
+      // Store on a private field the token HUD can read; the actual ring is
+      // drawn by refreshToken (see controls.ts hook).
       (token as unknown as Record<string, unknown>)[`${FLAG_SCOPE}-spectating`] = on;
       token.renderFlags?.set?.({ refreshState: true });
     } catch (err) {

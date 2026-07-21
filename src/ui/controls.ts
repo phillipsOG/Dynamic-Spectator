@@ -1,9 +1,9 @@
 /**
  * controls.ts — the entry points a user actually clicks / presses:
- *   • a scene-control toggle group (Spectator picker, MultiView, GM dashboard);
+ *   • a scene-control toggle group (Spectator picker, GM dashboard);
  *   • a Spectate button injected into the Token HUD (right-click a token);
- *   • keybindings (quick-spectate hovered token, open picker, toggle MultiView,
- *     stop spectating, open dashboard);
+ *   • keybindings (quick-spectate hovered token, open picker, stop spectating,
+ *     open dashboard);
  *   • the on-canvas pulsing ring drawn on the token currently being spectated.
  *
  * Every hook is registered defensively so the same code path works across the
@@ -57,27 +57,19 @@ export function registerKeybindings(): void {
     }
   });
 
-  kb.register(MODULE_ID, "toggleMultiView", {
-    name: "dynamic-spectator.keys.toggleMultiView.name",
-    hint: "dynamic-spectator.keys.toggleMultiView.hint",
-    editable: [{ key: "KeyM", modifiers: ["Shift"] }],
-    onDown: () => {
-      state().multiviewApp.toggle();
-      return true;
-    }
-  });
-
+  // Escape must beat core's own Escape handler (which closes windows / releases
+  // tokens / opens the game menu), so it registers at PRIORITY precedence and
+  // consumes the event only while a spectate session is actually live.
   kb.register(MODULE_ID, "stopSpectate", {
     name: "dynamic-spectator.keys.stopSpectate.name",
     hint: "dynamic-spectator.keys.stopSpectate.hint",
     editable: [{ key: "Escape", modifiers: [] }],
+    precedence: CONST?.KEYBINDING_PRECEDENCE?.PRIORITY ?? 0,
     onDown: () => {
       const s = state();
-      if (s.spectator.active) {
-        s.spectator.stop();
-        return true; // consume
-      }
-      return false; // let Escape do its normal thing otherwise
+      if (!s.spectator.active) return false; // let Escape do its normal thing
+      s.spectator.stop();
+      return true; // consume
     }
   });
 
@@ -96,9 +88,9 @@ export function registerKeybindings(): void {
 /**
  * Add our tools to the token scene-control group. These render for EVERY user
  * (players included) — only the extra GM dashboard tool is role-gated, which
- * never affects the base spectate/multiview tools. Distinct `order` values and
- * explicit `visible:true` avoid v13 tool-record quirks, and the whole thing is
- * wrapped so a control-framework change can never take the module down.
+ * never affects the base spectate tool. Distinct `order` values and explicit
+ * `visible:true` avoid v13 tool-record quirks, and the whole thing is wrapped so
+ * a control-framework change can never take the module down.
  */
 export function registerSceneControls(): void {
   Hooks.on("getSceneControlButtons", (controls: any) => {
@@ -113,16 +105,6 @@ export function registerSceneControls(): void {
           order: 90,
           onClick: () => SpectatorPicker.show(),
           onChange: () => SpectatorPicker.show()
-        },
-        {
-          name: "ds-multiview",
-          title: game.i18n.localize("dynamic-spectator.controls.multiview"),
-          icon: "fa-solid fa-table-cells-large",
-          button: true,
-          visible: true,
-          order: 91,
-          onClick: () => state().multiviewApp.toggle(),
-          onChange: () => state().multiviewApp.toggle()
         }
       ];
       if (game.user.isGM) {
@@ -132,7 +114,7 @@ export function registerSceneControls(): void {
           icon: "fa-solid fa-video",
           button: true,
           visible: true,
-          order: 92,
+          order: 91,
           onClick: () => GMDashboard.show(),
           onChange: () => GMDashboard.show()
         });

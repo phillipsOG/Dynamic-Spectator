@@ -1,7 +1,11 @@
 /**
- * SpectatorPicker — a polished, searchable list of every token the current user
- * may spectate. Each row shows portrait, name, elevation and disposition, marks
- * the currently-spectated token, and offers "Spectate" plus "Add to MultiView".
+ * SpectatorPicker — a compact, searchable list of every token the current user
+ * may spectate. Each row shows portrait, name, elevation and disposition, and
+ * marks the currently-spectated token.
+ *
+ * The row *is* the spectate button — clicking anywhere on it starts (or stops)
+ * spectating, which keeps the list narrow enough to sit beside the canvas. The
+ * only per-row buttons are the GM's opt-out / NPC toggles, revealed on hover.
  *
  * Built on ApplicationV2 + HandlebarsApplicationMixin (the modern Foundry app
  * framework). Search filtering is done live in the rendered DOM for zero-latency
@@ -24,7 +28,6 @@ interface Row {
   disposition: number;
   dispositionLabel: string;
   current: boolean;
-  inMultiView: boolean;
   reason: string;
   /** True when the token has no player owner (an NPC). */
   isNpc: boolean;
@@ -42,10 +45,8 @@ export class SpectatorPicker extends HandlebarsApplicationMixin(ApplicationV2) {
       icon: "fa-solid fa-eye",
       resizable: true
     },
-    position: { width: 380, height: 560 as number | "auto" },
+    position: { width: 264, height: 400 as number | "auto" },
     actions: {
-      spectate: SpectatorPicker.onSpectate,
-      addView: SpectatorPicker.onAddView,
       stop: SpectatorPicker.onStop,
       optOut: SpectatorPicker.onOptOut,
       toggleNpc: SpectatorPicker.onToggleNpc
@@ -63,7 +64,6 @@ export class SpectatorPicker extends HandlebarsApplicationMixin(ApplicationV2) {
     const s = state();
     const user = game.user;
     const placeables: FoundryToken[] = canvas?.tokens?.placeables ?? [];
-    const mvTokenIds = new Set(s.multiview.descriptors.map((d) => d.tokenId));
 
     const rows: Row[] = placeables
       .map((t) => {
@@ -77,7 +77,6 @@ export class SpectatorPicker extends HandlebarsApplicationMixin(ApplicationV2) {
           disposition: t.document.disposition ?? 0,
           dispositionLabel: this.dispositionLabel(t.document.disposition ?? 0),
           current: s.spectator.tokenId === t.id,
-          inMultiView: mvTokenIds.has(t.id),
           reason: decision.reason,
           isNpc,
           npcOptIn: isNpc && PermissionManager.npcSpectatable(t),
@@ -107,6 +106,27 @@ export class SpectatorPicker extends HandlebarsApplicationMixin(ApplicationV2) {
       });
       this.filterRows(root);
     }
+
+    // The whole row is the spectate target. Wired here rather than via
+    // [data-action] so a click on a nested GM button is not also counted as a
+    // row click (which would toggle spectate straight back off).
+    root.querySelectorAll<HTMLElement>("[data-ds-row]").forEach((row) => {
+      const activate = (): void => {
+        const id = row.dataset.tokenId;
+        if (!id) return;
+        state().spectator.toggle(id);
+        this.render();
+      };
+      row.addEventListener("click", (ev) => {
+        if ((ev.target as HTMLElement).closest("[data-action]")) return;
+        activate();
+      });
+      row.addEventListener("keydown", (ev) => {
+        if (ev.key !== "Enter" && ev.key !== " ") return;
+        ev.preventDefault();
+        activate();
+      });
+    });
   }
 
   private filterRows(root: HTMLElement): void {
@@ -128,22 +148,6 @@ export class SpectatorPicker extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   // -- actions ---------------------------------------------------------------
-
-  static onSpectate(this: SpectatorPicker, _event: Event, target: HTMLElement): void {
-    const id = SpectatorPicker.tokenIdFrom(target);
-    if (!id) return;
-    state().spectator.start(id);
-    this.render();
-  }
-
-  static onAddView(this: SpectatorPicker, _event: Event, target: HTMLElement): void {
-    const id = SpectatorPicker.tokenIdFrom(target);
-    if (!id) return;
-    const s = state();
-    s.multiview.addViewport(id);
-    if (!s.multiview.isOpen) s.multiview.open();
-    this.render();
-  }
 
   static onStop(this: SpectatorPicker): void {
     state().spectator.stop();

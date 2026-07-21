@@ -98,9 +98,8 @@ export class VisionController {
   }
 
   /**
-   * Swap the POV token *without* reinstalling the wrapper. Used by MultiView to
-   * rapidly cycle POV per off-screen capture while keeping a single wrapper
-   * installed for the whole session.
+   * Swap the POV token *without* tearing the wrapper down and back up, so
+   * retargeting an active session never flashes the user's own vision.
    */
   setTarget(token: FoundryToken, exclusive = true): void {
     this.spectated = token;

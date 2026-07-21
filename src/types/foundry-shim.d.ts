@@ -20,6 +20,7 @@ declare global {
   const ui: FoundryUI;
   const canvas: FoundryCanvas;
   const CONFIG: Record<string, any>;
+  const CONST: Record<string, any>;
   const Hooks: FoundryHooks;
   const foundry: FoundryNamespace;
 

@@ -1,14 +1,13 @@
 /* =========================================================================
    Dynamic Spectator — styles
-   Scoped under .dynamic-spectator-* / #dynamic-spectator-multiview so nothing
-   leaks into core Foundry UI. Designed to read as a native, CCTV-style layer.
+   Scoped under .dynamic-spectator-* / #dynamic-spectator-bar so nothing leaks
+   into core Foundry UI. Compact, dark, and deliberately quiet.
    ========================================================================= */
 
 :root {
   --ds-accent: #8ab4ff;
   --ds-accent-strong: #4f8cff;
   --ds-danger: #e5534b;
-  --ds-bg: rgba(18, 20, 26, 0.92);
   --ds-bg-solid: #12141a;
   --ds-panel: rgba(28, 31, 40, 0.96);
   --ds-border: rgba(138, 180, 255, 0.35);
@@ -40,10 +39,6 @@
 .dynamic-spectator-app button:active {
   transform: translateY(1px);
 }
-.dynamic-spectator-app .ds-danger:hover {
-  background: rgba(229, 83, 75, 0.2);
-  border-color: var(--ds-danger);
-}
 
 /* ---- Spectator picker -------------------------------------------------- */
 .ds-picker-body {
@@ -51,43 +46,43 @@
   flex-direction: column;
   height: 100%;
   min-height: 0;
+  font-size: 12px;
 }
 .ds-picker-toolbar {
-  display: flex;
-  gap: 8px;
-  padding: 10px;
-  border-bottom: 1px solid var(--ds-border);
-  align-items: center;
+  padding: 6px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
 }
 .ds-search {
-  flex: 1;
   display: flex;
   align-items: center;
   gap: 6px;
   background: rgba(0, 0, 0, 0.35);
-  border: 1px solid var(--ds-border);
-  border-radius: 6px;
-  padding: 4px 8px;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 5px;
+  padding: 2px 7px;
+}
+.ds-search:focus-within {
+  border-color: var(--ds-accent);
 }
 .ds-search i {
   color: var(--ds-muted);
+  font-size: 10px;
 }
 .ds-search input {
   flex: 1;
+  min-width: 0;
+  height: 22px;
   background: transparent;
   border: none;
   color: var(--ds-text);
+  font-size: 12px;
   outline: none;
-}
-.ds-stop {
-  white-space: nowrap;
-  padding: 4px 10px;
 }
 
 .ds-token-list {
   list-style: none;
   margin: 0;
-  padding: 6px;
+  padding: 4px;
   overflow-y: auto;
   flex: 1;
   min-height: 0;
@@ -95,25 +90,27 @@
 .ds-token-row {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 6px 8px;
-  border-radius: 6px;
+  gap: 8px;
+  padding: 3px 6px;
+  border-radius: 5px;
   border: 1px solid transparent;
+  cursor: pointer;
 }
-.ds-token-row:hover {
-  background: rgba(138, 180, 255, 0.08);
-  border-color: var(--ds-border);
+.ds-token-row:hover,
+.ds-token-row:focus-visible {
+  background: rgba(138, 180, 255, 0.1);
+  outline: none;
 }
 .ds-token-row.current {
-  border-color: var(--ds-accent);
   background: rgba(138, 180, 255, 0.14);
+  border-color: var(--ds-border);
 }
 .ds-token-portrait {
-  width: 40px;
-  height: 40px;
-  border-radius: 6px;
+  width: 26px;
+  height: 26px;
+  border-radius: 4px;
   object-fit: cover;
-  border: 1px solid var(--ds-border);
+  border: 1px solid rgba(255, 255, 255, 0.12);
   flex: 0 0 auto;
 }
 .ds-token-info {
@@ -121,6 +118,7 @@
   flex-direction: column;
   flex: 1;
   min-width: 0;
+  line-height: 1.25;
 }
 .ds-token-name {
   font-weight: 600;
@@ -130,75 +128,99 @@
 }
 .ds-token-meta {
   display: flex;
-  gap: 8px;
-  font-size: 11px;
+  gap: 6px;
+  font-size: 10px;
   color: var(--ds-muted);
   align-items: center;
 }
 .ds-disposition.disp-1 { color: #6fcf7f; }
 .ds-disposition.disp-0 { color: #d7c56a; }
 .ds-disposition.disp--1 { color: #e58b7a; }
-.ds-current-tag {
-  color: var(--ds-accent);
-  font-weight: 600;
-}
 .ds-npc-tag {
-  font-size: 9px;
+  font-size: 8px;
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--ds-muted);
-  border: 1px solid var(--ds-border);
+  border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: 3px;
-  padding: 0 4px;
-  line-height: 14px;
+  padding: 0 3px;
+  line-height: 12px;
 }
+
+/* GM-only per-token buttons: out of the way until the row is hovered. */
 .ds-token-actions {
   display: flex;
-  gap: 4px;
+  gap: 3px;
+  opacity: 0;
+  transition: opacity 0.12s ease;
 }
-.ds-token-actions .ds-btn {
-  width: 30px;
-  height: 30px;
+.ds-token-row:hover .ds-token-actions,
+.ds-token-row:focus-within .ds-token-actions {
+  opacity: 1;
+}
+.dynamic-spectator-app .ds-token-actions .ds-btn {
+  width: 22px;
+  height: 22px;
+  padding: 0;
   display: grid;
   place-items: center;
+  font-size: 10px;
+  background: transparent;
+  border-color: transparent;
 }
-/* NPC spectate toggle: dim when disabled, accent green when enabled. */
+.dynamic-spectator-app .ds-token-actions .ds-btn:hover {
+  background: rgba(138, 180, 255, 0.18);
+  border-color: var(--ds-border);
+}
 .ds-npc-toggle { color: var(--ds-muted); }
 .ds-npc-toggle.active { color: #6fcf7f; }
+
+/* The trailing eye: dim marker on every row, lit on the spectated one. */
+.ds-row-state {
+  flex: 0 0 auto;
+  font-size: 10px;
+  color: var(--ds-muted);
+  opacity: 0.25;
+}
+.ds-token-row:hover .ds-row-state { opacity: 0.7; }
+.ds-token-row.current .ds-row-state {
+  opacity: 1;
+  color: var(--ds-accent);
+}
+
 .ds-empty {
   color: var(--ds-muted);
   text-align: center;
-  padding: 24px;
+  padding: 20px;
+  font-size: 11px;
+}
+
+.dynamic-spectator-app .ds-stop {
+  margin: 0 6px 6px;
+  padding: 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-size: 11px;
+}
+.dynamic-spectator-app .ds-stop:hover {
+  background: rgba(229, 83, 75, 0.2);
+  border-color: var(--ds-danger);
 }
 
 /* ---- GM dashboard ------------------------------------------------------ */
 .ds-dashboard-body {
-  padding: 12px;
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
+  padding: 10px;
+  font-size: 12px;
 }
 .ds-dash-section h3 {
   margin: 0 0 8px;
-  font-size: 13px;
+  font-size: 12px;
   color: var(--ds-accent);
   border-bottom: 1px solid var(--ds-border);
   padding-bottom: 4px;
-}
-.ds-dash-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-  gap: 8px;
-  margin-bottom: 8px;
-}
-.ds-dash-grid button {
-  padding: 8px;
-}
-.ds-dash-count {
-  align-self: center;
-  color: var(--ds-muted);
-  font-size: 12px;
 }
 .ds-player-table {
   width: 100%;
@@ -211,267 +233,110 @@
   opacity: 0.5;
 }
 .ds-player-table td {
-  padding: 6px 4px;
+  padding: 5px 4px;
   vertical-align: middle;
 }
 .ds-player-swatch span {
   display: inline-block;
-  width: 12px;
-  height: 12px;
+  width: 10px;
+  height: 10px;
   border-radius: 50%;
   border: 1px solid rgba(255, 255, 255, 0.4);
 }
 .ds-player-name small {
   display: block;
   color: var(--ds-muted);
-  font-size: 11px;
+  font-size: 10px;
+}
+/* The override dropdown takes whatever the name column leaves it. */
+.ds-player-perm {
+  width: 100%;
 }
 .ds-player-perm select {
+  width: 100%;
   background: var(--ds-bg-solid);
   color: var(--ds-text);
   border: 1px solid var(--ds-border);
   border-radius: 4px;
-  max-width: 150px;
+  font-size: 11px;
 }
-.ds-diag-row {
-  display: flex;
-  gap: 16px;
-  font-size: 12px;
-  color: var(--ds-muted);
+.ds-player-name {
+  white-space: nowrap;
 }
 
-/* ---- MultiView overlay ------------------------------------------------- */
-#dynamic-spectator-multiview {
+/* ---- Spectating bar ---------------------------------------------------- */
+/* Fixed to the viewport just above the hotbar; SpectateBar sets `bottom`
+   inline from the hotbar's measured position. */
+#dynamic-spectator-bar {
   position: fixed;
-  inset: 0;
-  z-index: 60;
-  pointer-events: none;
-  font-family: var(--font-primary, "Signika", sans-serif);
-}
-#dynamic-spectator-multiview .dynamic-spectator-multiview-grid {
-  position: absolute;
-  inset: 0;
-}
-
-/* Each viewport cell (imagery is behind on the PIXI canvas; this is chrome). */
-.dynamic-spectator-viewport {
-  position: absolute;
-  pointer-events: auto;
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  border-radius: var(--ds-radius);
-  overflow: hidden;
-  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.5), var(--ds-shadow);
-  transition: left 0.18s ease, top 0.18s ease, width 0.18s ease, height 0.18s ease,
-    border-color 0.18s ease;
-}
-.dynamic-spectator-viewport.primary {
-  border-color: var(--ds-accent-strong);
-  box-shadow: inset 0 0 0 2px var(--ds-accent-strong), var(--ds-shadow);
-}
-.dynamic-spectator-viewport.dragging {
-  opacity: 0.6;
-}
-.dynamic-spectator-viewport.drop-target {
-  border-color: var(--ds-accent);
-  box-shadow: inset 0 0 0 3px var(--ds-accent);
-}
-.dynamic-spectator-multiview-vp-frame {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-}
-
-/* Text overlays */
-.dynamic-spectator-overlay {
-  position: absolute;
-  left: 0;
-  right: 0;
-  padding: 6px 8px;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 6px 10px;
-  color: #fff;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
-  pointer-events: none;
-  font-size: 12px;
-}
-.dynamic-spectator-overlay.top {
-  top: 0;
-  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.55), transparent);
-}
-.dynamic-spectator-overlay.bottom {
-  bottom: 0;
-  flex-direction: column;
-  align-items: flex-start;
-  background: linear-gradient(to top, rgba(0, 0, 0, 0.6), transparent);
-}
-.dynamic-spectator-multiview-name {
-  font-weight: 700;
-}
-.dynamic-spectator-multiview-player {
-  color: var(--ds-accent);
-  font-size: 11px;
-}
-.dynamic-spectator-multiview-meta {
-  display: flex;
-  gap: 10px;
-  font-size: 11px;
-  color: #dfe6f2;
-}
-.dynamic-spectator-multiview-conditions {
-  font-size: 10px;
-  color: #ffd479;
-}
-
-/* HP bar */
-.dynamic-spectator-multiview-hp {
-  position: relative;
-  width: 100%;
-  max-width: 180px;
-  height: 12px;
-  background: rgba(0, 0, 0, 0.6);
-  border-radius: 6px;
-  overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-}
-.dynamic-spectator-multiview-hp-bar {
-  position: absolute;
-  inset: 0 auto 0 0;
-  width: 100%;
-  background: #4caf50;
-  transition: width 0.25s ease, background 0.25s ease;
-}
-.dynamic-spectator-multiview-hp-text {
-  position: absolute;
-  inset: 0;
-  display: grid;
-  place-items: center;
-  font-size: 10px;
-  font-weight: 700;
-}
-
-/* Direction indicator */
-.dynamic-spectator-multiview-direction {
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  width: 22px;
-  height: 22px;
-  display: grid;
-  place-items: center;
-  color: var(--ds-accent);
-  background: rgba(0, 0, 0, 0.45);
-  border-radius: 50%;
-  pointer-events: none;
-}
-
-/* Per-viewport toolbar (revealed on hover) */
-.dynamic-spectator-multiview-vp-toolbar {
-  position: absolute;
-  top: 6px;
-  left: 50%;
-  transform: translateX(-50%) translateY(-6px);
-  display: flex;
-  gap: 3px;
-  padding: 3px;
-  background: var(--ds-panel);
-  border: 1px solid var(--ds-border);
-  border-radius: 6px;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.15s ease, transform 0.15s ease;
-}
-.dynamic-spectator-viewport:hover .dynamic-spectator-multiview-vp-toolbar {
-  opacity: 1;
-  transform: translateX(-50%) translateY(0);
-  pointer-events: auto;
-}
-.dynamic-spectator-multiview-vp-toolbar button {
-  width: 26px;
-  height: 26px;
-  display: grid;
-  place-items: center;
-  border: none;
-  border-radius: 4px;
-  background: transparent;
-  color: var(--ds-text);
-  cursor: pointer;
-}
-.dynamic-spectator-multiview-vp-toolbar button:hover {
-  background: rgba(138, 180, 255, 0.22);
-}
-
-/* Global control bar */
-.dynamic-spectator-controlbar {
-  position: absolute;
-  bottom: 14px;
   left: 50%;
   transform: translateX(-50%);
+  z-index: 70;
   display: flex;
-  gap: 14px;
   align-items: center;
-  padding: 8px 12px;
+  gap: 8px;
+  padding: 3px 6px 3px 10px;
   background: var(--ds-panel);
   border: 1px solid var(--ds-border);
-  border-radius: 12px;
+  border-radius: 999px;
   box-shadow: var(--ds-shadow);
-  pointer-events: auto;
-  backdrop-filter: blur(6px);
-}
-.dynamic-spectator-cb-group {
-  display: flex;
-  gap: 6px;
-  align-items: center;
-}
-.dynamic-spectator-controlbar button {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 10px;
-  border: 1px solid var(--ds-border);
-  border-radius: 6px;
-  background: rgba(255, 255, 255, 0.05);
   color: var(--ds-text);
+  font-family: var(--font-primary, "Signika", sans-serif);
+  font-size: 12px;
+  line-height: 1;
   cursor: pointer;
-  font-size: 12px;
+  pointer-events: auto;
+  transition: border-color 0.15s ease, background 0.15s ease;
 }
-.dynamic-spectator-controlbar button:hover {
-  background: rgba(138, 180, 255, 0.18);
-  border-color: var(--ds-accent);
+#dynamic-spectator-bar:hover {
+  border-color: var(--ds-danger);
 }
-.dynamic-spectator-page {
-  min-width: 46px;
-  text-align: center;
-  color: var(--ds-muted);
-  font-size: 12px;
-}
-.dynamic-spectator-diag {
+.ds-bar-icon {
   color: var(--ds-accent);
   font-size: 11px;
-  font-variant-numeric: tabular-nums;
-  min-width: 90px;
+  animation: ds-bar-pulse 2.4s ease-in-out infinite;
+}
+.ds-bar-name {
+  font-weight: 600;
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+#dynamic-spectator-bar .ds-bar-stop {
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+}
+#dynamic-spectator-bar kbd {
+  display: block;
+  padding: 2px 6px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.35);
+  color: var(--ds-muted);
+  font-family: inherit;
+  font-size: 10px;
+  letter-spacing: 0.04em;
+}
+#dynamic-spectator-bar:hover kbd {
+  color: var(--ds-text);
+  border-color: var(--ds-danger);
+}
+.ds-stop kbd {
+  padding: 1px 5px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 3px;
+  background: rgba(0, 0, 0, 0.35);
+  color: var(--ds-muted);
+  font-family: inherit;
+  font-size: 10px;
 }
 
-/* Streaming mode: minimal, borderless, no chrome until hover */
-#dynamic-spectator-multiview.streaming .dynamic-spectator-viewport {
-  border-radius: 0;
-  border-color: transparent;
-  box-shadow: none;
-}
-#dynamic-spectator-multiview.streaming .dynamic-spectator-overlay {
-  opacity: 0;
-  transition: opacity 0.4s ease;
-}
-#dynamic-spectator-multiview.streaming .dynamic-spectator-viewport:hover .dynamic-spectator-overlay {
-  opacity: 1;
-}
-#dynamic-spectator-multiview.streaming .dynamic-spectator-controlbar {
-  opacity: 0.15;
-  transition: opacity 0.3s ease;
-}
-#dynamic-spectator-multiview.streaming .dynamic-spectator-controlbar:hover {
-  opacity: 1;
+@keyframes ds-bar-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
 }
 
 /* Token HUD spectate button active state */
@@ -482,9 +347,11 @@
 
 /* Respect reduced-motion preferences */
 @media (prefers-reduced-motion: reduce) {
-  .dynamic-spectator-viewport,
-  .dynamic-spectator-multiview-hp-bar,
-  .dynamic-spectator-multiview-vp-toolbar {
+  .ds-bar-icon {
+    animation: none;
+  }
+  .ds-token-actions,
+  #dynamic-spectator-bar {
     transition: none;
   }
 }

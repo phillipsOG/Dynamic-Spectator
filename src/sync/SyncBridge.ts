@@ -1,12 +1,11 @@
 /**
  * SyncBridge — the single place that binds Foundry's document/canvas lifecycle
- * hooks to our managers, so a spectated POV and every MultiView camera stay
- * synchronised in real time with:
+ * hooks to the SpectatorManager, so a spectated POV stays synchronised in real
+ * time with:
  *   move · teleport · elevation change · scene change · death · deletion ·
  *   polymorph · hide · vision change · ownership change.
  *
- * All handlers are registered once and are idempotent. Heavy work is debounced
- * where a burst of updates is likely (e.g. dragging a token fires many updates).
+ * All handlers are registered once and are idempotent.
  */
 
 import { CrossSceneBehaviour } from "../constants.js";
@@ -22,9 +21,7 @@ export function registerSyncHooks(): void {
   Hooks.on("updateToken", (doc: FoundryTokenDocument, changes: Record<string, unknown>) => {
     const touched = POV_FIELDS.some((f) => f in changes);
     if (!touched) return;
-    const s = state();
-    s.spectator.onTokenUpdate(doc.id);
-    // MultiView cameras follow automatically on the ticker; nothing else needed.
+    state().spectator.onTokenUpdate(doc.id);
   });
 
   // A token finishing its movement animation — ensure the POV settles exactly.
@@ -35,9 +32,7 @@ export function registerSyncHooks(): void {
 
   // ---- Deletion / death / polymorph ---------------------------------------
   Hooks.on("deleteToken", (doc: FoundryTokenDocument) => {
-    const s = state();
-    s.spectator.onTokenGone(doc.id);
-    s.multiview.onTokenDeleted(doc.id);
+    state().spectator.onTokenGone(doc.id);
   });
 
   // Ownership changes can revoke a spectator's permission mid-session.
@@ -60,24 +55,7 @@ export function registerSyncHooks(): void {
     handleSceneChange();
   });
 
-  // ---- Window resize -> relayout ------------------------------------------
-  window.addEventListener("resize", onWindowResize);
-
   log.debug("sync hooks registered");
-}
-
-let resizeRaf = 0;
-function onWindowResize(): void {
-  if (resizeRaf) cancelAnimationFrame(resizeRaf);
-  resizeRaf = requestAnimationFrame(() => {
-    resizeRaf = 0;
-    try {
-      const s = state();
-      if (s.multiview.isOpen) s.multiview.onResize();
-    } catch {
-      /* not ready */
-    }
-  });
 }
 
 function revalidatePermissions(tokenId: string): void {
@@ -107,30 +85,10 @@ function handleSceneChange(): void {
   }
   const behaviour = getSettings().crossSceneBehaviour;
 
-  // --- Spectator (single) ---
   if (s.spectator.active && s.spectator.actorId) {
     const stillHere = canvas?.tokens?.get(s.spectator.tokenId ?? "");
     if (!stillHere) {
       applyCrossScene(behaviour, () => s.spectator.attemptCrossSceneFollow(), () => s.spectator.stop());
-    }
-  }
-
-  // --- MultiView ---
-  if (s.multiview.count > 0) {
-    if (behaviour === CrossSceneBehaviour.Drop) {
-      s.multiview.dispose();
-    } else if (behaviour === CrossSceneBehaviour.Follow) {
-      const alive = s.multiview.remapForNewScene();
-      if (alive === 0) s.multiview.dispose();
-    } else {
-      // Prompt.
-      promptCrossScene(
-        () => {
-          const alive = s.multiview.remapForNewScene();
-          if (alive === 0) s.multiview.dispose();
-        },
-        () => s.multiview.dispose()
-      );
     }
   }
 }

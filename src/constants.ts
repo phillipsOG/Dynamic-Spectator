@@ -28,10 +28,7 @@ export const TOKEN_FLAGS = {
 /** Custom hooks other modules / macros can listen to. */
 export const HOOKS = {
   spectateStart: `${MODULE_ID}.spectateStart`,
-  spectateStop: `${MODULE_ID}.spectateStop`,
-  multiViewOpen: `${MODULE_ID}.multiViewOpen`,
-  multiViewClose: `${MODULE_ID}.multiViewClose`,
-  viewportsChanged: `${MODULE_ID}.viewportsChanged`
+  spectateStop: `${MODULE_ID}.spectateStop`
 } as const;
 
 /** Every registered setting key. */
@@ -41,36 +38,17 @@ export const SETTINGS = {
   perPlayerPermissions: "perPlayerPermissions",
   allowNpcSpectate: "allowNpcSpectate",
 
-  // MultiView core
-  maxCameras: "maxCameras",
-  autoGrouping: "autoGrouping",
-  elevationThreshold: "elevationThreshold",
-  groupingDistance: "groupingDistance",
-
-  // Layout / overlay
-  viewportPadding: "viewportPadding",
-  overlayFields: "overlayFields",
-  streamingMode: "streamingMode",
-
   // Camera behaviour
   cameraMode: "cameraMode",
   followSpeed: "followSpeed",
-  transitionSpeed: "transitionSpeed",
   deadZone: "deadZone",
   zoomMemory: "zoomMemory",
-
-  // Performance / rendering
-  performanceMode: "performanceMode",
-  renderScale: "renderScale",
-  frameRateCap: "frameRateCap",
-  secondaryCadence: "secondaryCadence",
 
   // Multi-scene
   crossSceneBehaviour: "crossSceneBehaviour",
 
   // Diagnostics
-  debugLogging: "debugLogging",
-  profiling: "profiling"
+  debugLogging: "debugLogging"
 } as const;
 
 /** Permission modes for who may spectate what. */
@@ -81,6 +59,25 @@ export enum PermissionMode {
   AnyPlayerToken = "any-player-token",
   AnyToken = "any-token"
 }
+
+/**
+ * Localization key for each mode's label. Single source of truth shared by the
+ * settings `choices` map and the dashboard's per-player override dropdown, so
+ * the two can never drift or fall back to showing raw enum values.
+ */
+export const PERMISSION_MODE_LABELS: Record<PermissionMode, string> = {
+  [PermissionMode.GMOnly]: `${MODULE_ID}.settings.permissionMode.gmOnly`,
+  [PermissionMode.OwnedOnly]: `${MODULE_ID}.settings.permissionMode.ownedOnly`,
+  [PermissionMode.PartyMembers]: `${MODULE_ID}.settings.permissionMode.partyMembers`,
+  [PermissionMode.AnyPlayerToken]: `${MODULE_ID}.settings.permissionMode.anyPlayerToken`,
+  [PermissionMode.AnyToken]: `${MODULE_ID}.settings.permissionMode.anyToken`
+};
+
+/**
+ * Sentinel `<option>` value meaning "no per-player override — follow the world
+ * mode". Not a PermissionMode: it maps to deleting the override entirely.
+ */
+export const PERMISSION_DEFAULT = "default" as const;
 
 /** Camera follow behaviour. */
 export enum CameraMode {
@@ -97,33 +94,8 @@ export enum CrossSceneBehaviour {
   Drop = "drop"
 }
 
-/** Performance presets that scale render cadence / quality. */
-export enum PerformanceMode {
-  Quality = "quality",
-  Balanced = "balanced",
-  Performance = "performance",
-  Battery = "battery"
-}
-
-/** Optional overlay fields keyed by id (see OverlayField). */
-export const OVERLAY_FIELDS = [
-  "characterName",
-  "playerName",
-  "hp",
-  "conditions",
-  "elevation",
-  "distance",
-  "statusEffects",
-  "scene",
-  "direction"
-] as const;
-
-export type OverlayField = (typeof OVERLAY_FIELDS)[number];
-
 /** CSS + DOM ids used by the UI layer. */
 export const DOM = {
-  multiViewRoot: `${MODULE_ID}-multiview`,
-  viewportClass: `${MODULE_ID}-viewport`,
-  overlayClass: `${MODULE_ID}-overlay`,
-  spectateIndicator: `${MODULE_ID}-spectating`
+  /** The compact "you are spectating X" pill anchored above the hotbar. */
+  spectateBar: `${MODULE_ID}-bar`
 } as const;

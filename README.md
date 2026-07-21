@@ -1,9 +1,7 @@
 # Dynamic Spectator
 
 A Foundry VTT module that lets any client **spectate any token** with that
-token's true vision, lighting and fog — and adds a **dynamic multi-camera
-(MultiView)** system that renders several player perspectives at once, CCTV /
-NVR-style, with an adaptive layout engine and a streaming mode.
+token's true vision, lighting and fog.
 
 > Foundry v12 minimum, verified on **v13**. TypeScript, ES modules, bundled with
 > esbuild.
@@ -12,7 +10,6 @@ NVR-style, with an adaptive layout engine and a streaming mode.
 
 ## Features
 
-### Universal Spectator Mode
 - Spectate any token you are permitted to (configurable — see Permissions).
 - Camera **locks and follows** the token; live updates on every move.
 - Inherits the token's **vision, lighting, darkness, fog, elevation, vision mode,
@@ -20,32 +17,18 @@ NVR-style, with an adaptive layout engine and a streaming mode.
   token becomes a real vision source, core computes all of this for you.
 - **Exclusive POV clamp**: you never see more than that token legitimately could,
   even if you own other tokens. Spectating is not a cheat.
+- **Height-aware**: roofs and overhead tiles above the spectated token are
+  revealed, so you see inside the building or on the upper floor rather than the
+  rooftop — and it keeps up as the token changes elevation.
 - Camera modes: Smooth, Snap, Interpolate, Dead-zone. Framerate-independent.
+- A compact **spectating bar** above the hotbar names who you are watching and
+  carries the way out; **Escape** (or clicking the bar) ends the session.
 - Visual "spectating" ring on the active token.
 
-### Dynamic MultiView
-- Multiple independent viewports, each with its **own camera, zoom, follow mode,
-  POV vision, and token tracking**.
-- **Adaptive layout** (professional CCTV feel): full screen → split → featured →
-  2×2 → adaptive grid → pagination. Aspect-aware for 16:9, 21:9 ultrawide and
-  portrait monitors; re-tiles live on window resize.
-- **Height awareness**: characters near the same elevation are grouped first, so
-  "observe the ground floor" shows the Fighter + Rogue, not the upstairs Wizard.
-- **Primary view**: largest tile, highest render priority, smoothest updates.
-  Secondaries use adaptive cadence to protect performance.
-- View management: primary, pin, collapse, **solo/fullscreen**, **drag-and-drop**
-  reorder/swap, pagination.
-- Per-viewport overlays (all optional): character name, player name, HP,
-  conditions, elevation, distance, scene, and a movement **direction** arrow.
-- **Streaming mode**: clean, borderless, minimal UI with soft transitions —
-  built for OBS capture.
-
 ### GM Dashboard
-- One-click observe presets: **Entire party**, **Combatants**, **NPCs**, and
-  **this elevation** (uses your selected token's height).
-- Per-player row: spectate their character, or set a per-player permission
-  override.
-- Live FPS / render-budget diagnostics.
+
+Per-player row: spectate that player's character, or set a per-player permission
+override without opening the settings sheet.
 
 ---
 
@@ -65,7 +48,7 @@ cd Dynamic-Spectator
 npm install
 npm run build          # type-checks then bundles to dist/dynamic-spectator.js
 # link into your Foundry data dir for development:
-FOUNDRY_DATA="C:/Users/you/AppData/Local/FoundryVTT/Data" npm run link
+npm run link -- "C:/Users/you/AppData/Local/FoundryVTT/Data"
 ```
 
 Then enable **Dynamic Spectator** in the module manager. **lib-wrapper** is
@@ -80,16 +63,14 @@ patch if it is absent).
 | --- | --- |
 | Quick spectate | Hover a token and press **V** (toggles) |
 | Open the searchable picker | **Shift+V**, or the eye tool in the token controls |
-| Stop spectating | **Escape** (or the Token HUD button) |
-| Toggle MultiView | **Shift+M**, or the grid tool in the token controls |
+| Stop spectating | **Escape**, click the spectating bar, or the Token HUD button |
 | Open GM Dashboard | **Shift+D** (GM only), or the video tool |
 | Spectate from a token | Right-click a token → the eye button in the Token HUD |
 
-Inside MultiView: hover a viewport for its toolbar (primary ★, pin, solo,
-zoom ±, collapse, remove), double-click to solo, drag one viewport onto another
-to swap. The bottom control bar adds views, runs the observe presets, paginates,
-and toggles streaming mode. All keybindings are rebindable in **Configure
-Controls**.
+In the picker, click a row to start spectating it; click the current row (or hit
+Escape) to stop. Escape only takes over while a session is live, so it still
+closes windows and deselects tokens the rest of the time. All keybindings are
+rebindable in **Configure Controls**.
 
 ---
 
@@ -115,19 +96,12 @@ Additional controls: **per-token opt-out** (GM sets a "no spectate" flag on
 sensitive player tokens) and **per-player overrides** (Dashboard → Permission
 column). The GM can always spectate.
 
-Spectating is **height-aware**: overhead / roof tiles above the spectated token
-are revealed so you see inside a building or on an upper floor rather than the
-rooftop, following the token as it changes elevation.
-
 ---
 
 ## Settings (summary)
 
-Permissions · Maximum simultaneous cameras · Automatic grouping · Elevation
-threshold · Grouping distance · Viewport padding · Overlay fields · Streaming
-mode · Camera mode / follow speed / dead-zone / zoom memory · Transition speed ·
-Performance mode · Render scale · Frame-rate cap · Secondary camera cadence ·
-Cross-scene behaviour · Debug logging · Profiling.
+Who may spectate · Allow spectating NPC tokens · Camera mode / follow speed /
+dead-zone / keep my zoom · Cross-scene behaviour · Debug logging.
 
 See [docs/DEVELOPER.md](docs/DEVELOPER.md) for the full list and defaults.
 
@@ -145,34 +119,25 @@ ds.toggleSpectate(tokenId);
 ds.openPicker();
 ds.openDashboard();            // GM only
 
-ds.addView(tokenId);           // add a MultiView camera and open the overlay
-ds.observeParty();             // auto-build the party view
-ds.observeAuto();              // height-aware auto grouping
-ds.toggleMultiView();
-
-ds.managers.multiview;         // MultiViewManager, for power users
-ds.profiler.report();          // timing samples (enable Profiling first)
+ds.managers.spectator;         // SpectatorManager, for power users
+ds.settings();                 // resolved, typed settings snapshot
 ```
 
-Custom hooks: `dynamic-spectator.spectateStart`, `.spectateStop`,
-`.multiViewOpen`, `.multiViewClose`, `.viewportsChanged`, `.ready`.
+Custom hooks: `dynamic-spectator.spectateStart`, `.spectateStop`, `.ready`.
 
 ---
 
 ## Compatibility & limitations
 
-- **No core files are modified.** All integration is via hooks and a single,
-  reversible `Token#_isVisionSource` wrapper.
-- MultiView renders the **real** scene per POV via time-multiplexed off-screen
-  captures. Because Foundry keeps a *single* global fog/vision state, independent
-  POVs are time-multiplexed, not truly parallel — the honest, correct approach on
-  one GPU context. The primary viewport is live; secondaries update on an
-  adaptive cadence. See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
-- HP/condition overlays use system-agnostic resolvers with fallbacks (dnd5e,
-  pf2e-style paths, generic `health`/`hp`). Unusual systems may need a small
-  resolver addition — see the extension points in the docs.
-- The per-capture vision-sync path is the most core-version-sensitive area; it is
-  feature-detected and documented for maintainers.
+- **No core files are modified.** All integration is via hooks and two single,
+  reversible prototype wrappers (`Token#_isVisionSource` for POV and the token
+  occlusion path for roof reveal).
+- Foundry keeps a *single* global fog/vision state, so exactly one token is
+  spectated at a time on a given client. Starting a new spectate retargets the
+  existing session rather than opening a second one.
+- The vision-recompute path is the most core-version-sensitive area; it is
+  feature-detected and documented for maintainers. See
+  [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 ---
 
@@ -184,8 +149,7 @@ npm run typecheck  # tsc --noEmit
 npm run lint
 ```
 
-Docs: [Architecture](docs/ARCHITECTURE.md) ·
-[Performance](docs/PERFORMANCE.md) · [Testing](docs/TESTING.md) ·
+Docs: [Architecture](docs/ARCHITECTURE.md) · [Testing](docs/TESTING.md) ·
 [Developer guide](docs/DEVELOPER.md) · [Install](docs/INSTALL.md).
 
 ## License

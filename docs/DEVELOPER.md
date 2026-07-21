@@ -39,40 +39,36 @@ than reaching for `any` at the call site — it keeps call sites honest.
 
 - **init** — `registerSettings`, `registerAllControls` (keybindings, scene
   controls, Token HUD, indicator), preload templates.
-- **setup** — construct `SpectatorManager`, `MultiViewManager`, `MultiViewApp`;
-  publish the API onto `game.modules.get("dynamic-spectator").api` and
-  `globalThis.DynamicSpectator`.
+- **setup** — construct `SpectatorManager`; publish the API onto
+  `game.modules.get("dynamic-spectator").api` and `globalThis.DynamicSpectator`.
 - **ready** — `registerSyncHooks`; fire `dynamic-spectator.ready`.
 
 ## Settings reference
 
 | Key | Scope | Default | Notes |
 | --- | --- | --- | --- |
-| `permissionMode` | world | owned-only | Who may spectate. |
+| `permissionMode` | world | any-player-token | Who may spectate. |
 | `perPlayerPermissions` | world | `{}` | Managed via the dashboard. |
-| `maxCameras` | client | 4 | Live viewports per page. |
-| `autoGrouping` | client | true | Height/distance grouping on auto-observe. |
-| `elevationThreshold` | world | 5 | "Same floor" band size. |
-| `groupingDistance` | world | 60 | Grid units for distance clustering. |
-| `viewportPadding` | client | 6 | Grid gap (0 in streaming). |
-| `overlayFields` | client | name+hp+elev | Per-field visibility object. |
-| `streamingMode` | client | false | Clean borderless output. |
+| `allowNpcSpectate` | world | false | World default for the NPC axis. |
 | `cameraMode` | client | smooth | smooth/snap/interpolate/dead-zone. |
 | `followSpeed` | client | 0.6 | Easing responsiveness. |
-| `transitionSpeed` | client | 0.5 | Layout/transition speed. |
 | `deadZone` | client | 0.2 | Dead-zone fraction. |
-| `zoomMemory` | client | true | Independent per-viewport zoom. |
-| `performanceMode` | client | balanced | quality/balanced/performance/battery. |
-| `renderScale` | client | 1.0 | Capture resolution multiplier. |
-| `frameRateCap` | client | 60 | Capture FPS ceiling. |
-| `secondaryCadence` | client | 2 | Recapture secondaries every N frames. |
+| `zoomMemory` | client | true | Hold the zoom you started at. |
 | `crossSceneBehaviour` | client | prompt | prompt/follow/drop. |
 | `debugLogging` | client | false | Verbose console. |
-| `profiling` | client | false | Timing + FPS readout. |
+
+## Keybindings
+
+| Action | Default | Notes |
+| --- | --- | --- |
+| `quickSpectate` | **V** | Hovered → controlled → targeted token, else picker. |
+| `openPicker` | **Shift+V** | |
+| `stopSpectate` | **Escape** | Registered at `KEYBINDING_PRECEDENCE.PRIORITY` so it beats core's Escape, but returns `false` when no session is live so core's behaviour is untouched the rest of the time. |
+| `openDashboard` | **Shift+D** | `restricted: true` (GM only). |
 
 ## Public API
 
-See the README for the full surface. Everything routes through the managers in
+See the README for the full surface. Everything routes through the manager in
 `state.ts`; the API is a thin, stable wrapper so internal refactors don't break
 consumers.
 
@@ -82,24 +78,7 @@ consumers.
 | --- | --- |
 | `dynamic-spectator.spectateStart` | `{ tokenId, exclusive }` |
 | `dynamic-spectator.spectateStop` | `{ tokenId }` |
-| `dynamic-spectator.multiViewOpen` | `{ count }` |
-| `dynamic-spectator.multiViewClose` | `{}` |
-| `dynamic-spectator.viewportsChanged` | `{ count }` |
 | `dynamic-spectator.ready` | the API object |
-
-## Adding a feature — worked examples
-
-**A new overlay field ("speed"):**
-1. Add `"speed"` to `OVERLAY_FIELDS` in `constants.ts`.
-2. Resolve it in `Viewport.computeOverlay` (read from `token.actor.system`).
-3. Render it in `MultiViewApp.updateOverlay` behind `fields.speed`.
-4. Add `overlay`/localization keys.
-
-**Support a new system's HP:**
-- Add its path to the `candidates` array in `Viewport.resolveHp`.
-
-**A new layout for exactly 6 views:**
-- Add a branch in `LayoutEngine.compute` and a unit test in `layout.test.ts`.
 
 ## Release
 
@@ -115,5 +94,3 @@ consumers.
   already exist in `types/index.ts`; wire a handler in a `SocketBridge`).
 - Persisted per-token fog history for spectators (needs a per-token fog store;
   core only keeps per-user fog today).
-- A parallel-renderer capture strategy if a future core exposes multiple render
-  contexts — slot it into `SceneCapture` behind the same interface.

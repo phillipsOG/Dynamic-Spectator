@@ -4,26 +4,23 @@
  * Boot sequence:
  *   init   → register settings, keybindings, scene controls, Token HUD, indicator,
  *            and preload Handlebars templates.
- *   setup  → construct the managers and publish the public API.
+ *   setup  → construct the manager and publish the public API.
  *   ready  → wire the document/canvas sync hooks and mark the module live.
  *
  * The public API is exposed on the module entry (`game.modules.get(
- * "dynamic-spectator").api`) so macros and other modules can drive spectating and
- * MultiView programmatically.
+ * "dynamic-spectator").api`) so macros and other modules can drive spectating
+ * programmatically.
  */
 
 import { HOOKS, MODULE_ID, MODULE_TITLE } from "./constants.js";
-import { MultiViewManager } from "./multiview/MultiViewManager.js";
 import { getSettings, registerSettings } from "./settings.js";
 import { SpectatorManager } from "./spectator/SpectatorManager.js";
 import { DS } from "./state.js";
 import { registerSyncHooks } from "./sync/SyncBridge.js";
 import { registerAllControls } from "./ui/controls.js";
 import { GMDashboard } from "./ui/GMDashboard.js";
-import { MultiViewApp } from "./ui/MultiViewApp.js";
 import { SpectatorPicker } from "./ui/SpectatorPicker.js";
 import { log } from "./util/logger.js";
-import { profiler } from "./util/profiler.js";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -32,10 +29,10 @@ const TEMPLATES = [
   `modules/${MODULE_ID}/templates/gm-dashboard.hbs`
 ];
 
-/** Build the public API object once the managers exist. */
+/** Build the public API object once the manager exists. */
 function buildApi() {
   return {
-    version: "1.1.0",
+    version: "2.0.0",
     /** Spectate a token by id. */
     spectate: (tokenId: string, exclusive = true) => DS.spectator?.start(tokenId, exclusive),
     stopSpectate: () => DS.spectator?.stop(),
@@ -43,35 +40,12 @@ function buildApi() {
     /** Open UIs. */
     openPicker: () => SpectatorPicker.show(),
     openDashboard: () => GMDashboard.show(),
-    openMultiView: () => DS.multiviewApp?.activate(),
-    closeMultiView: () => DS.multiviewApp?.deactivate(),
-    toggleMultiView: () => DS.multiviewApp?.toggle(),
-    /** Add / remove MultiView cameras programmatically. */
-    addView: (tokenId: string) => {
-      DS.multiview?.addViewport(tokenId);
-      if (!DS.multiviewApp?.isActive) DS.multiviewApp?.activate();
-    },
-    observeParty: () => {
-      DS.multiview?.observeParty();
-      DS.multiviewApp?.activate();
-    },
-    observeAuto: () => {
-      DS.multiview?.observeAuto();
-      DS.multiviewApp?.activate();
-    },
     /** Direct manager access for power users. */
     managers: {
       get spectator() {
         return DS.spectator;
-      },
-      get multiview() {
-        return DS.multiview;
-      },
-      get multiviewApp() {
-        return DS.multiviewApp;
       }
     },
-    profiler,
     settings: () => getSettings(),
     HOOKS
   };
@@ -93,17 +67,8 @@ function bootPhase(phase: string, fn: () => void): void {
 }
 
 Hooks.once("init", () => {
-  log.info(`Initializing ${MODULE_TITLE} v1.1.0 (user "${game?.user?.name}", GM=${game?.user?.isGM})`);
-  bootPhase("settings", () =>
-    registerSettings(() => {
-      // Live-apply setting changes to an open MultiView session.
-      try {
-        if (DS.multiview?.isOpen) DS.multiview.applySettings();
-      } catch {
-        /* not ready */
-      }
-    })
-  );
+  log.info(`Initializing ${MODULE_TITLE} v2.0.0 (user "${game?.user?.name}", GM=${game?.user?.isGM})`);
+  bootPhase("settings", () => registerSettings());
   bootPhase("controls", () => registerAllControls());
 
   // Preload templates (API path varies across versions).
@@ -119,14 +84,12 @@ Hooks.once("init", () => {
 Hooks.once("setup", () => {
   bootPhase("managers", () => {
     DS.spectator = new SpectatorManager();
-    DS.multiview = new MultiViewManager();
-    DS.multiviewApp = new MultiViewApp();
 
     const api = buildApi();
     const mod = game.modules.get(MODULE_ID) as any;
     if (mod) mod.api = api;
     (globalThis as any).DynamicSpectator = api;
-    log.debug("managers constructed; API published");
+    log.debug("manager constructed; API published");
   });
 });
 
@@ -137,11 +100,10 @@ Hooks.once("ready", () => {
   log.info(`${MODULE_TITLE} ready for "${game?.user?.name}"`);
 });
 
-// When switching scenes / disabling, ensure any open MultiView tears down its
-// PIXI overlay so we never leak GPU resources or leave the stage hidden.
+// When switching scenes / disabling, release the camera lock and vision patch so
+// we never strand the user in a spectated POV on a scene that no longer exists.
 Hooks.on("canvasTearDown", () => {
   try {
-    if (DS.multiviewApp?.isActive) DS.multiviewApp.deactivate();
     DS.spectator?.stop();
   } catch (err) {
     log.debug("teardown cleanup skipped", err);
