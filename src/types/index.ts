@@ -63,6 +63,7 @@ export interface ResolvedSettings {
   camera: CameraConfig;
   indicator: IndicatorConfig;
   indicatorPerToken: boolean;
+  indicatorRingHoverOnly: boolean;
   crossSceneBehaviour: string;
   debugLogging: boolean;
 }

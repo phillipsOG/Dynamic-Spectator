@@ -190,6 +190,19 @@
   color: var(--ds-accent);
 }
 
+/* "Only show ring button on hover" setting: fall back to the same
+   hover-reveal behaviour as the GM-only buttons. Higher specificity than the
+   always-visible rules above so it wins regardless of source order. */
+.ds-ring-btn.ds-ring-btn-hover-only {
+  opacity: 0;
+}
+.ds-token-row:hover .ds-ring-btn.ds-ring-btn-hover-only,
+.ds-token-row.current .ds-ring-btn.ds-ring-btn-hover-only,
+.ds-ring-btn.ds-ring-btn-hover-only:hover,
+.ds-ring-btn.ds-ring-btn-hover-only:focus-visible {
+  opacity: 1;
+}
+
 /* The trailing eye: dim marker on every row, lit on the spectated one. */
 .ds-row-state {
   flex: 0 0 auto;

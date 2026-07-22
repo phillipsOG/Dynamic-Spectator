@@ -3,6 +3,14 @@
 All notable changes to Dynamic Spectator are documented here. This project
 adheres to [Semantic Versioning](https://semver.org/).
 
+## [2.1.5] - 2026-07-22
+
+### Added
+
+- **"Only show ring button on hover"** - a new client setting, off by default,
+  that reverts the per-token ring button (made always-visible in v2.1.4) back
+  to appearing only on row hover, the same as the GM-only opt-out/NPC buttons.
+
 ## [2.1.4] - 2026-07-22
 
 ### Changed

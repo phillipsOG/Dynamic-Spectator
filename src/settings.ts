@@ -182,9 +182,21 @@ export function registerSettings(): void {
     onChange: () => {
       onIndicatorChange();
       // The picker's palette button depends on this setting; fired here
-      // rather than left to `updateSetting` (see HOOKS.indicatorPerTokenChanged).
-      Hooks.callAll(HOOKS.indicatorPerTokenChanged);
+      // rather than left to `updateSetting` (see HOOKS.indicatorRingUiChanged).
+      Hooks.callAll(HOOKS.indicatorRingUiChanged);
     }
+  });
+
+  // Off by default (the button is always visible - see v2.1.4). On, it goes
+  // back to only appearing on row hover, like the GM-only opt-out/NPC buttons.
+  game.settings.register(MODULE_ID, SETTINGS.indicatorRingHoverOnly, {
+    name: L("indicatorRingHoverOnly.name"),
+    hint: L("indicatorRingHoverOnly.hint"),
+    scope: "client",
+    config: true,
+    type: Boolean,
+    default: false,
+    onChange: () => Hooks.callAll(HOOKS.indicatorRingUiChanged)
   });
 
   // Not exposed on the config sheet - edited via the picker's per-row dialog.
@@ -310,6 +322,7 @@ export function getSettings(): ResolvedSettings {
     },
     indicator: getIndicatorConfig(),
     indicatorPerToken: read<boolean>(SETTINGS.indicatorPerToken, false),
+    indicatorRingHoverOnly: read<boolean>(SETTINGS.indicatorRingHoverOnly, false),
     crossSceneBehaviour: read<string>(SETTINGS.crossSceneBehaviour, CrossSceneBehaviour.Prompt),
     debugLogging: read<boolean>(SETTINGS.debugLogging, false)
   };

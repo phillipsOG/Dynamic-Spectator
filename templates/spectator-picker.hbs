@@ -29,7 +29,8 @@
         </span>
       </div>
       {{#if ../perTokenEnabled}}
-      <button type="button" class="ds-btn ds-ring-btn" data-action="ringSettings"
+      <button type="button" class="ds-btn ds-ring-btn {{#if ../ringHoverOnly}}ds-ring-btn-hover-only{{/if}}"
+              data-action="ringSettings"
               title="{{localize 'dynamic-spectator.picker.ringSettings'}}">
         <i class="fa-solid fa-palette"></i>
       </button>

@@ -132,6 +132,7 @@ export class SpectatorPicker extends HandlebarsApplicationMixin(ApplicationV2) {
       isGM: user.isGM,
       query: this.query,
       perTokenEnabled: settings.indicatorPerToken,
+      ringHoverOnly: settings.indicatorRingHoverOnly,
       version: (game.modules.get(MODULE_ID) as any)?.version ?? ""
     };
   }
@@ -400,12 +401,13 @@ export class SpectatorPicker extends HandlebarsApplicationMixin(ApplicationV2) {
     // which rows a user may see at all - so any of ours is worth a refresh.
     // Client-scoped settings live in localStorage and never reach this hook;
     // any of those that affect the list (e.g. indicatorPerToken) fire their
-    // own dedicated hook instead - see HOOKS.indicatorPerTokenChanged below.
+    // own dedicated hook instead - see HOOKS.indicatorRingUiChanged below.
     Hooks.on("updateSetting", (setting: { key?: string }) => {
       if (setting?.key?.startsWith(`${MODULE_ID}.`)) refresh();
     });
-    // The picker's per-row palette button depends on this client setting.
-    Hooks.on(HOOKS.indicatorPerTokenChanged, () => refresh());
+    // The picker's per-row palette button (whether it shows at all, and
+    // whether it needs a hover) depends on these client settings.
+    Hooks.on(HOOKS.indicatorRingUiChanged, () => refresh());
 
     log.debug("picker refresh hooks registered");
   }

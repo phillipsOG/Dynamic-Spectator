@@ -30,11 +30,12 @@ export const HOOKS = {
   spectateStart: `${MODULE_ID}.spectateStart`,
   spectateStop: `${MODULE_ID}.spectateStop`,
   /**
-   * Fired from the `indicatorPerToken` setting's own `onChange` rather than
-   * relying on core's `updateSetting` hook, which client-scoped settings never
-   * reach (they are stored in `localStorage`, not a world `Setting` document).
+   * Fired from the `indicatorPerToken` / `indicatorRingHoverOnly` settings'
+   * own `onChange` rather than relying on core's `updateSetting` hook, which
+   * client-scoped settings never reach (they are stored in `localStorage`,
+   * not a world `Setting` document).
    */
-  indicatorPerTokenChanged: `${MODULE_ID}.indicatorPerTokenChanged`
+  indicatorRingUiChanged: `${MODULE_ID}.indicatorRingUiChanged`
 } as const;
 
 /** Every registered setting key. */
@@ -59,6 +60,8 @@ export const SETTINGS = {
   indicatorPerToken: "indicatorPerToken",
   /** Per-token overrides: { [tokenId]: { color?, opacity?, width? } }. Client-scoped. */
   indicatorTokenOverrides: "indicatorTokenOverrides",
+  /** Whether the picker's per-token ring button requires a row hover to appear. */
+  indicatorRingHoverOnly: "indicatorRingHoverOnly",
 
   // Multi-scene
   crossSceneBehaviour: "crossSceneBehaviour",

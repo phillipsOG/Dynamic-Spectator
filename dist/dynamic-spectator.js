@@ -32,11 +32,12 @@ var init_constants = __esm({
       spectateStart: `${MODULE_ID}.spectateStart`,
       spectateStop: `${MODULE_ID}.spectateStop`,
       /**
-       * Fired from the `indicatorPerToken` setting's own `onChange` rather than
-       * relying on core's `updateSetting` hook, which client-scoped settings never
-       * reach (they are stored in `localStorage`, not a world `Setting` document).
+       * Fired from the `indicatorPerToken` / `indicatorRingHoverOnly` settings'
+       * own `onChange` rather than relying on core's `updateSetting` hook, which
+       * client-scoped settings never reach (they are stored in `localStorage`,
+       * not a world `Setting` document).
        */
-      indicatorPerTokenChanged: `${MODULE_ID}.indicatorPerTokenChanged`
+      indicatorRingUiChanged: `${MODULE_ID}.indicatorRingUiChanged`
     };
     SETTINGS = {
       // Permissions
@@ -57,6 +58,8 @@ var init_constants = __esm({
       indicatorPerToken: "indicatorPerToken",
       /** Per-token overrides: { [tokenId]: { color?, opacity?, width? } }. Client-scoped. */
       indicatorTokenOverrides: "indicatorTokenOverrides",
+      /** Whether the picker's per-token ring button requires a row hover to appear. */
+      indicatorRingHoverOnly: "indicatorRingHoverOnly",
       // Multi-scene
       crossSceneBehaviour: "crossSceneBehaviour",
       // Diagnostics
@@ -387,8 +390,17 @@ function registerSettings() {
     default: false,
     onChange: () => {
       onIndicatorChange();
-      Hooks.callAll(HOOKS.indicatorPerTokenChanged);
+      Hooks.callAll(HOOKS.indicatorRingUiChanged);
     }
+  });
+  game.settings.register(MODULE_ID, SETTINGS.indicatorRingHoverOnly, {
+    name: L("indicatorRingHoverOnly.name"),
+    hint: L("indicatorRingHoverOnly.hint"),
+    scope: "client",
+    config: true,
+    type: Boolean,
+    default: false,
+    onChange: () => Hooks.callAll(HOOKS.indicatorRingUiChanged)
   });
   game.settings.register(MODULE_ID, SETTINGS.indicatorTokenOverrides, {
     scope: "client",
@@ -481,6 +493,7 @@ function getSettings() {
     },
     indicator: getIndicatorConfig(),
     indicatorPerToken: read(SETTINGS.indicatorPerToken, false),
+    indicatorRingHoverOnly: read(SETTINGS.indicatorRingHoverOnly, false),
     crossSceneBehaviour: read(SETTINGS.crossSceneBehaviour, "prompt" /* Prompt */),
     debugLogging: read(SETTINGS.debugLogging, false)
   };
@@ -1379,6 +1392,7 @@ var SpectatorPicker = class _SpectatorPicker extends HandlebarsApplicationMixin2
       isGM: user.isGM,
       query: this.query,
       perTokenEnabled: settings.indicatorPerToken,
+      ringHoverOnly: settings.indicatorRingHoverOnly,
       version: game.modules.get(MODULE_ID)?.version ?? ""
     };
   }
@@ -1605,7 +1619,7 @@ var SpectatorPicker = class _SpectatorPicker extends HandlebarsApplicationMixin2
     Hooks.on("updateSetting", (setting) => {
       if (setting?.key?.startsWith(`${MODULE_ID}.`)) refresh();
     });
-    Hooks.on(HOOKS.indicatorPerTokenChanged, () => refresh());
+    Hooks.on(HOOKS.indicatorRingUiChanged, () => refresh());
     log.debug("picker refresh hooks registered");
   }
   /** Does this token update change anything the list shows or gates on? */
@@ -1795,7 +1809,7 @@ var TEMPLATES = [
 ];
 function buildApi() {
   return {
-    version: "2.1.4",
+    version: "2.1.5",
     /** Spectate a token by id. */
     spectate: (tokenId, exclusive = true) => DS.spectator?.start(tokenId, exclusive),
     stopSpectate: () => DS.spectator?.stop(),
@@ -1821,7 +1835,7 @@ function bootPhase(phase, fn) {
   }
 }
 Hooks.once("init", () => {
-  log.info(`Initializing ${MODULE_TITLE} v2.1.4 (user "${game?.user?.name}", GM=${game?.user?.isGM})`);
+  log.info(`Initializing ${MODULE_TITLE} v2.1.5 (user "${game?.user?.name}", GM=${game?.user?.isGM})`);
   bootPhase("settings", () => registerSettings());
   bootPhase("controls", () => registerAllControls());
   bootPhase("templates", () => {
