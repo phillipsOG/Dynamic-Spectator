@@ -192,14 +192,16 @@
 
 /* "Only show ring options on hover" setting: fall back to the same
    hover-reveal behaviour as the GM-only buttons. Deliberately *not* keyed off
-   `.current` - visibility here is hover state alone, regardless of whether
-   this happens to be the token you are already spectating. Higher specificity
-   than the always-visible rules above so it wins regardless of source order. */
+   `.current` or `:focus-within` - the row itself is a tabindex="0" click
+   target, so clicking it to spectate leaves it focused (and therefore
+   `:focus-within`-true) long after the pointer has moved away. Visibility
+   here is genuine hover, or the button itself directly holding keyboard
+   focus - never "this row happens to be selected". Higher specificity than
+   the always-visible rules above so it wins regardless of source order. */
 .ds-ring-btn.ds-ring-btn-hover-only {
   opacity: 0;
 }
 .ds-token-row:hover .ds-ring-btn.ds-ring-btn-hover-only,
-.ds-token-row:focus-within .ds-ring-btn.ds-ring-btn-hover-only,
 .ds-ring-btn.ds-ring-btn-hover-only:focus-visible {
   opacity: 1;
 }

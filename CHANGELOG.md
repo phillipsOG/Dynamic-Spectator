@@ -3,6 +3,18 @@
 All notable changes to Dynamic Spectator are documented here. This project
 adheres to [Semantic Versioning](https://semver.org/).
 
+## [2.1.7] - 2026-07-22
+
+### Fixed
+
+- The hover-only ring button still showed permanently on whichever row was
+  currently being spectated. The real cause: the row is a `tabindex="0"`
+  click target, so clicking it to spectate leaves it focused, and the reveal
+  rule included `:focus-within` - true for as long as that focus lingers,
+  regardless of whether the pointer had moved away. Dropped `:focus-within`
+  from the trigger; visibility is now genuine hover (or the button itself
+  directly holding keyboard focus) only, never "this happens to be selected".
+
 ## [2.1.6] - 2026-07-22
 
 ### Fixed
