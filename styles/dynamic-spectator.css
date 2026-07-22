@@ -190,21 +190,9 @@
   color: var(--ds-accent);
 }
 
-/* "Only show ring options on hover" setting: fall back to the same
-   hover-reveal behaviour as the GM-only buttons. Deliberately *not* keyed off
-   `.current` or `:focus-within` - the row itself is a tabindex="0" click
-   target, so clicking it to spectate leaves it focused (and therefore
-   `:focus-within`-true) long after the pointer has moved away. Visibility
-   here is genuine hover, or the button itself directly holding keyboard
-   focus - never "this row happens to be selected". Higher specificity than
-   the always-visible rules above so it wins regardless of source order. */
-.ds-ring-btn.ds-ring-btn-hover-only {
-  opacity: 0;
-}
-.ds-token-row:hover .ds-ring-btn.ds-ring-btn-hover-only,
-.ds-ring-btn.ds-ring-btn-hover-only:focus-visible {
-  opacity: 1;
-}
+/* "Only show ring options on hover": the button drops the .ds-ring-btn class
+   and moves into its own .ds-token-actions wrapper in the template, so it is
+   shown/hidden by that same rule above (line ~158) - not a parallel one here. */
 
 /* The trailing eye: dim marker on every row, lit on the spectated one. */
 .ds-row-state {

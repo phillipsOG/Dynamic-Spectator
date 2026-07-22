@@ -3,6 +3,17 @@
 All notable changes to Dynamic Spectator are documented here. This project
 adheres to [Semantic Versioning](https://semver.org/).
 
+## [2.1.8] - 2026-07-22
+
+### Changed
+
+- Reworked how "Only show ring options on hover" is implemented: rather than a
+  hand-rolled CSS rule shadowing the GM-only opt-out/NPC buttons' reveal
+  behaviour (and repeatedly drifting out of sync with it), the ring button
+  now literally shares the same markup - a plain `.ds-btn` inside a
+  `.ds-token-actions` wrapper - so it is shown and hidden by the exact same
+  rule as those buttons, not a parallel one.
+
 ## [2.1.7] - 2026-07-22
 
 ### Fixed
