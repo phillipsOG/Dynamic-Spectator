@@ -9,6 +9,7 @@
  */
 
 import { CrossSceneBehaviour } from "../constants.js";
+import { PermissionManager } from "../permissions/PermissionManager.js";
 import { getSettings } from "../settings.js";
 import { state } from "../state.js";
 import { log } from "../util/logger.js";
@@ -55,7 +56,42 @@ export function registerSyncHooks(): void {
     handleSceneChange();
   });
 
+  // ---- Combat: auto-spectate whoever's turn it is --------------------------
+  // `combatStart` covers round 1/turn 0, which does not otherwise fire
+  // `combatTurn`; every advance after that does.
+  Hooks.on("combatTurn", (combat: FoundryCombat) => autoSpectateCombatant(combat));
+  Hooks.on("combatStart", (combat: FoundryCombat) => autoSpectateCombatant(combat));
+
   log.debug("sync hooks registered");
+}
+
+/**
+ * If enabled, retarget this client's spectated POV to whoever's turn it
+ * currently is. Deliberately exempts the GM - who needs full map vision to
+ * run the encounter, not one combatant's exclusive POV - regardless of the
+ * setting. Anything that is not a valid target for this user right now (off
+ * the viewed scene, opted out, permission mode disallows it, etc.) is
+ * skipped silently rather than warned about, since this fires on every turn
+ * and a manual spectate attempt already surfaces that warning.
+ */
+function autoSpectateCombatant(combat: FoundryCombat): void {
+  if (game.user.isGM) return;
+  if (!getSettings().autoSpectateCombatTurn) return;
+
+  let s: ReturnType<typeof state>;
+  try {
+    s = state();
+  } catch {
+    return;
+  }
+
+  const tokenId = combat?.combatant?.tokenId;
+  if (!tokenId || s.spectator.tokenId === tokenId) return;
+
+  const token = canvas?.tokens?.get(tokenId);
+  if (!token || !PermissionManager.allowed(game.user, token)) return;
+
+  s.spectator.start(tokenId);
 }
 
 function revalidatePermissions(tokenId: string): void {

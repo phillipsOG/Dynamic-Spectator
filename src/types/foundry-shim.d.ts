@@ -51,8 +51,8 @@ declare global {
     system: { id: string; version: string };
     version: string;
     socket: { on(event: string, cb: (...args: any[]) => void): void; emit(event: string, ...args: any[]): void } | null;
-    combats?: FoundryCollection<any>;
-    combat?: any;
+    combats?: FoundryCollection<FoundryCombat>;
+    combat?: FoundryCombat;
     scenes: FoundryCollection<FoundryScene> & { current?: FoundryScene; active?: FoundryScene };
     i18n: { localize(key: string): string; format(key: string, data: Record<string, any>): string };
     [key: string]: any;
@@ -228,6 +228,25 @@ declare global {
     name: string;
     active: boolean;
     tokens: FoundryCollection<FoundryTokenDocument>;
+    [key: string]: any;
+  }
+
+  interface FoundryCombatant {
+    tokenId?: string;
+    token?: FoundryTokenDocument;
+    actor?: FoundryActor | null;
+    defeated?: boolean;
+    [key: string]: any;
+  }
+
+  interface FoundryCombat {
+    id: string;
+    round: number;
+    turn: number | null;
+    started: boolean;
+    /** The combatant whose turn it currently is, if the combat has started. */
+    combatant: FoundryCombatant | undefined;
+    turns: FoundryCombatant[];
     [key: string]: any;
   }
 

@@ -62,6 +62,8 @@ var init_constants = __esm({
       indicatorRingHoverOnly: "indicatorRingHoverOnly",
       // Multi-scene
       crossSceneBehaviour: "crossSceneBehaviour",
+      // Combat
+      autoSpectateCombatTurn: "autoSpectateCombatTurn",
       // Diagnostics
       debugLogging: "debugLogging"
     };
@@ -422,6 +424,14 @@ function registerSettings() {
       ["drop" /* Drop */]: L("crossSceneBehaviour.drop")
     }
   });
+  game.settings.register(MODULE_ID, SETTINGS.autoSpectateCombatTurn, {
+    name: L("autoSpectateCombatTurn.name"),
+    hint: L("autoSpectateCombatTurn.hint"),
+    scope: "client",
+    config: true,
+    type: Boolean,
+    default: true
+  });
   game.settings.register(MODULE_ID, SETTINGS.debugLogging, {
     name: L("debugLogging.name"),
     hint: L("debugLogging.hint"),
@@ -495,6 +505,7 @@ function getSettings() {
     indicatorPerToken: read(SETTINGS.indicatorPerToken, false),
     indicatorRingHoverOnly: read(SETTINGS.indicatorRingHoverOnly, false),
     crossSceneBehaviour: read(SETTINGS.crossSceneBehaviour, "prompt" /* Prompt */),
+    autoSpectateCombatTurn: read(SETTINGS.autoSpectateCombatTurn, true),
     debugLogging: read(SETTINGS.debugLogging, false)
   };
 }
@@ -1115,6 +1126,7 @@ var SpectatorManager = class {
 
 // src/sync/SyncBridge.ts
 init_constants();
+init_PermissionManager();
 var POV_FIELDS = ["x", "y", "elevation", "rotation", "hidden", "sight", "vision", "light"];
 function registerSyncHooks() {
   Hooks.on("updateToken", (doc, changes) => {
@@ -1141,7 +1153,24 @@ function registerSyncHooks() {
   Hooks.on("canvasReady", () => {
     handleSceneChange();
   });
+  Hooks.on("combatTurn", (combat) => autoSpectateCombatant(combat));
+  Hooks.on("combatStart", (combat) => autoSpectateCombatant(combat));
   log.debug("sync hooks registered");
+}
+function autoSpectateCombatant(combat) {
+  if (game.user.isGM) return;
+  if (!getSettings().autoSpectateCombatTurn) return;
+  let s;
+  try {
+    s = state();
+  } catch {
+    return;
+  }
+  const tokenId = combat?.combatant?.tokenId;
+  if (!tokenId || s.spectator.tokenId === tokenId) return;
+  const token = canvas?.tokens?.get(tokenId);
+  if (!token || !PermissionManager.allowed(game.user, token)) return;
+  s.spectator.start(tokenId);
 }
 function revalidatePermissions(tokenId) {
   const s = state();
@@ -1778,6 +1807,30 @@ function registerTokenHud() {
     col.appendChild(btn);
   });
 }
+function registerCombatTrackerToggle() {
+  Hooks.on("renderCombatTracker", (app, html) => {
+    try {
+      if (!app?.viewed) return;
+      const root = html?.[0] ?? (html instanceof HTMLElement ? html : null);
+      const header = root?.querySelector(".encounter-controls, .combat-controls");
+      if (!header) return;
+      const enabled = Boolean(game.settings.get(MODULE_ID, SETTINGS.autoSpectateCombatTurn));
+      const btn = document.createElement("a");
+      btn.className = "combat-button ds-combat-auto-toggle" + (enabled ? " active" : "");
+      btn.title = game.i18n.localize("dynamic-spectator.combat.autoSpectate");
+      btn.innerHTML = `<i class="fa-solid fa-eye"></i>`;
+      btn.addEventListener("click", async (ev) => {
+        ev.preventDefault();
+        ev.stopPropagation();
+        await game.settings.set(MODULE_ID, SETTINGS.autoSpectateCombatTurn, !enabled);
+        app.render();
+      });
+      header.appendChild(btn);
+    } catch (err) {
+      log.debug("combat tracker toggle injection failed", err);
+    }
+  });
+}
 function registerTokenIndicator() {
   const draw = (token) => {
     try {
@@ -1827,6 +1880,7 @@ function registerAllControls() {
   safe("sceneControls", registerSceneControls);
   safe("tokenHud", registerTokenHud);
   safe("tokenIndicator", registerTokenIndicator);
+  safe("combatTrackerToggle", registerCombatTrackerToggle);
   safe("pickerRefresh", () => SpectatorPicker.registerRefreshHooks());
 }
 
@@ -1837,7 +1891,7 @@ var TEMPLATES = [
 ];
 function buildApi() {
   return {
-    version: "2.1.10",
+    version: "2.2.0",
     /** Spectate a token by id. */
     spectate: (tokenId, exclusive = true) => DS.spectator?.start(tokenId, exclusive),
     stopSpectate: () => DS.spectator?.stop(),
@@ -1863,7 +1917,7 @@ function bootPhase(phase, fn) {
   }
 }
 Hooks.once("init", () => {
-  log.info(`Initializing ${MODULE_TITLE} v2.1.10 (user "${game?.user?.name}", GM=${game?.user?.isGM})`);
+  log.info(`Initializing ${MODULE_TITLE} v2.2.0 (user "${game?.user?.name}", GM=${game?.user?.isGM})`);
   bootPhase("settings", () => registerSettings());
   bootPhase("controls", () => registerAllControls());
   bootPhase("templates", () => {

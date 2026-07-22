@@ -2,6 +2,8 @@
  * controls.ts - the entry points a user actually clicks / presses:
  *   • a scene-control toggle group (Spectator picker, GM dashboard);
  *   • a Spectate button injected into the Token HUD (right-click a token);
+ *   • an auto-spectate toggle injected into the Combat Tracker while a
+ *     combat is active (the actual auto-spectate logic lives in SyncBridge);
  *   • keybindings (quick-spectate hovered token, open picker, stop spectating,
  *     open dashboard);
  *   • the on-canvas pulsing ring drawn on the token currently being spectated;
@@ -12,7 +14,7 @@
  * HTMLElement).
  */
 
-import { FLAG_SCOPE, MODULE_ID } from "../constants.js";
+import { FLAG_SCOPE, MODULE_ID, SETTINGS } from "../constants.js";
 import { PermissionManager } from "../permissions/PermissionManager.js";
 import { getIndicatorConfig } from "../settings.js";
 import { state } from "../state.js";
@@ -168,6 +170,41 @@ export function registerTokenHud(): void {
 }
 
 /**
+ * Inject a quick on/off toggle for auto-spectate into the Combat Tracker,
+ * visible only while it has a combat loaded (not the empty "no encounters"
+ * state) so it never clutters the tab outside combat. The setting itself
+ * lives in Module Settings too - this is just a faster path to the same
+ * value, for anyone who would rather not leave the encounter to reach it.
+ */
+export function registerCombatTrackerToggle(): void {
+  Hooks.on("renderCombatTracker", (app: any, html: any) => {
+    try {
+      if (!app?.viewed) return;
+
+      const root: HTMLElement | null = html?.[0] ?? (html instanceof HTMLElement ? html : null);
+      const header = root?.querySelector(".encounter-controls, .combat-controls");
+      if (!header) return;
+
+      const enabled = Boolean(game.settings.get(MODULE_ID, SETTINGS.autoSpectateCombatTurn));
+      const btn = document.createElement("a");
+      btn.className = "combat-button ds-combat-auto-toggle" + (enabled ? " active" : "");
+      btn.title = game.i18n.localize("dynamic-spectator.combat.autoSpectate");
+      btn.innerHTML = `<i class="fa-solid fa-eye"></i>`;
+      btn.addEventListener("click", async (ev) => {
+        ev.preventDefault();
+        ev.stopPropagation();
+        await game.settings.set(MODULE_ID, SETTINGS.autoSpectateCombatTurn, !enabled);
+        app.render();
+      });
+
+      header.appendChild(btn);
+    } catch (err) {
+      log.debug("combat tracker toggle injection failed", err);
+    }
+  });
+}
+
+/**
  * Draw / clear the ring on the token currently being spectated. Colour, opacity
  * and width come from the per-user indicator settings, which invalidate their
  * cache and poke this token's render flags when changed (see settings.ts), so
@@ -231,5 +268,6 @@ export function registerAllControls(): void {
   safe("sceneControls", registerSceneControls);
   safe("tokenHud", registerTokenHud);
   safe("tokenIndicator", registerTokenIndicator);
+  safe("combatTrackerToggle", registerCombatTrackerToggle);
   safe("pickerRefresh", () => SpectatorPicker.registerRefreshHooks());
 }

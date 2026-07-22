@@ -384,6 +384,15 @@ input[type="checkbox"][name^="dynamic-spectator."] {
   text-shadow: 0 0 8px var(--ds-accent);
 }
 
+/* Combat Tracker auto-spectate toggle: dim (off) until enabled. */
+.ds-combat-auto-toggle {
+  opacity: 0.5;
+}
+.ds-combat-auto-toggle.active {
+  opacity: 1;
+  color: var(--ds-accent);
+}
+
 /* Respect reduced-motion preferences */
 @media (prefers-reduced-motion: reduce) {
   .ds-bar-icon {

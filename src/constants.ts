@@ -66,6 +66,9 @@ export const SETTINGS = {
   // Multi-scene
   crossSceneBehaviour: "crossSceneBehaviour",
 
+  // Combat
+  autoSpectateCombatTurn: "autoSpectateCombatTurn",
+
   // Diagnostics
   debugLogging: "debugLogging"
 } as const;

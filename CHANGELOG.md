@@ -3,6 +3,22 @@
 All notable changes to Dynamic Spectator are documented here. This project
 adheres to [Semantic Versioning](https://semver.org/).
 
+## [2.2.0] - 2026-07-22
+
+### Added
+
+- **Auto-spectate the active combatant.** A new client setting, on by
+  default, automatically switches your spectated POV to whoever's turn it is
+  during combat - provided their token is a valid spectating target for you
+  (permission mode, opt-outs and NPC gating all still apply; anything that
+  is not a valid target, or not on your current scene, is skipped silently
+  rather than warned about, since this fires every turn). Deliberately does
+  not apply to the GM, who needs full map vision to run the encounter rather
+  than one combatant's clamped POV.
+- A quick on/off toggle for it is injected into the Combat Tracker while a
+  combat is active, for one-click access without leaving the encounter to
+  open Module Settings.
+
 ## [2.1.10] - 2026-07-22
 
 ### Fixed

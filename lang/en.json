@@ -65,6 +65,10 @@
         "follow": "Follow automatically",
         "drop": "Stop following"
       },
+      "autoSpectateCombatTurn": {
+        "name": "Auto-spectate active combatant",
+        "hint": "During combat, automatically switch to spectating whoever's turn it is, provided their token is a valid spectating target for you. Does not apply to the GM. A quick toggle for this also appears in the Combat Tracker while a combat is active."
+      },
       "debugLogging": {
         "name": "Debug logging",
         "hint": "Verbose console output prefixed with 'Dynamic Spectator'."
@@ -130,6 +134,9 @@
       "spectate": "Spectator",
       "stop": "Stop spectating",
       "dashboard": "Spectator Dashboard"
+    },
+    "combat": {
+      "autoSpectate": "Auto-spectate active combatant (click to toggle)"
     }
   }
 }

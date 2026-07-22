@@ -223,6 +223,22 @@ export function registerSettings(): void {
     }
   });
 
+  // ---- Combat ---------------------------------------------------------------
+  // On by default; the GM is deliberately exempt regardless of this setting
+  // (see SyncBridge's autoSpectateCombatant) since forcing their camera and
+  // vision onto one combatant's clamped POV would fight the GM's own job of
+  // running the encounter. The quick-toggle injected into the Combat Tracker
+  // (see controls.ts) writes to this same setting for one-click access
+  // without opening the full settings sheet.
+  game.settings.register(MODULE_ID, SETTINGS.autoSpectateCombatTurn, {
+    name: L("autoSpectateCombatTurn.name"),
+    hint: L("autoSpectateCombatTurn.hint"),
+    scope: "client",
+    config: true,
+    type: Boolean,
+    default: true
+  });
+
   // ---- Diagnostics ---------------------------------------------------------
   game.settings.register(MODULE_ID, SETTINGS.debugLogging, {
     name: L("debugLogging.name"),
@@ -324,6 +340,7 @@ export function getSettings(): ResolvedSettings {
     indicatorPerToken: read<boolean>(SETTINGS.indicatorPerToken, false),
     indicatorRingHoverOnly: read<boolean>(SETTINGS.indicatorRingHoverOnly, false),
     crossSceneBehaviour: read<string>(SETTINGS.crossSceneBehaviour, CrossSceneBehaviour.Prompt),
+    autoSpectateCombatTurn: read<boolean>(SETTINGS.autoSpectateCombatTurn, true),
     debugLogging: read<boolean>(SETTINGS.debugLogging, false)
   };
 }

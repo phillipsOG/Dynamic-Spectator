@@ -65,6 +65,7 @@ export interface ResolvedSettings {
   indicatorPerToken: boolean;
   indicatorRingHoverOnly: boolean;
   crossSceneBehaviour: string;
+  autoSpectateCombatTurn: boolean;
   debugLogging: boolean;
 }
 
