@@ -3,6 +3,15 @@
 All notable changes to Dynamic Spectator are documented here. This project
 adheres to [Semantic Versioning](https://semver.org/).
 
+## [2.1.4] - 2026-07-22
+
+### Changed
+
+- The picker's per-token ring button is now always visible, like the trailing
+  eye state icon - it no longer needs a row hover to appear. Only the GM-only
+  opt-out/NPC toggle buttons remain hover-revealed, since those are a much
+  more occasional action.
+
 ## [2.1.3] - 2026-07-22
 
 ### Fixed

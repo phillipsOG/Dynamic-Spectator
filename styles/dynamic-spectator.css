@@ -159,7 +159,7 @@
 .ds-token-row:focus-within .ds-token-actions {
   opacity: 1;
 }
-.dynamic-spectator-app .ds-token-actions .ds-btn {
+.dynamic-spectator-app .ds-token-row .ds-btn {
   width: 22px;
   height: 22px;
   padding: 0;
@@ -169,12 +169,26 @@
   background: transparent;
   border-color: transparent;
 }
-.dynamic-spectator-app .ds-token-actions .ds-btn:hover {
+.dynamic-spectator-app .ds-token-row .ds-btn:hover {
   background: rgba(138, 180, 255, 0.18);
   border-color: var(--ds-border);
 }
 .ds-npc-toggle { color: var(--ds-muted); }
 .ds-npc-toggle.active { color: #6fcf7f; }
+
+/* Unlike the GM-only actions, the ring button is always available to every
+   user - so, like the trailing eye, it stays visible without a hover. */
+.ds-ring-btn {
+  color: var(--ds-muted);
+  opacity: 0.55;
+}
+.ds-token-row:hover .ds-ring-btn,
+.ds-token-row.current .ds-ring-btn,
+.ds-ring-btn:hover,
+.ds-ring-btn:focus-visible {
+  opacity: 1;
+  color: var(--ds-accent);
+}
 
 /* The trailing eye: dim marker on every row, lit on the spectated one. */
 .ds-row-state {

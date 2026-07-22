@@ -1,6 +1,6 @@
 {
   "name": "dynamic-spectator",
-  "version": "2.1.3",
+  "version": "2.1.4",
   "description": "Universal spectator mode for Foundry Virtual Tabletop.",
   "type": "module",
   "private": true,

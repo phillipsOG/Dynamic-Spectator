@@ -32,7 +32,7 @@ const TEMPLATES = [
 /** Build the public API object once the manager exists. */
 function buildApi() {
   return {
-    version: "2.1.3",
+    version: "2.1.4",
     /** Spectate a token by id. */
     spectate: (tokenId: string, exclusive = true) => DS.spectator?.start(tokenId, exclusive),
     stopSpectate: () => DS.spectator?.stop(),
@@ -67,7 +67,7 @@ function bootPhase(phase: string, fn: () => void): void {
 }
 
 Hooks.once("init", () => {
-  log.info(`Initializing ${MODULE_TITLE} v2.1.3 (user "${game?.user?.name}", GM=${game?.user?.isGM})`);
+  log.info(`Initializing ${MODULE_TITLE} v2.1.4 (user "${game?.user?.name}", GM=${game?.user?.isGM})`);
   bootPhase("settings", () => registerSettings());
   bootPhase("controls", () => registerAllControls());
 
