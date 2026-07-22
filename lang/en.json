@@ -55,8 +55,8 @@
         "hint": "Let the ring's colour, opacity and thickness be overridden individually for each token from the spectator picker, instead of always using the settings above."
       },
       "indicatorRingHoverOnly": {
-        "name": "Only show ring button on hover",
-        "hint": "Keep the per-token ring button hidden until you hover its row in the spectator picker, the same as the GM-only buttons, instead of always showing it."
+        "name": "Only show ring options on hover",
+        "hint": "Keep the per-token ring options hidden until you hover its row in the spectator picker, the same as the GM-only buttons, instead of always showing them."
       },
       "crossSceneBehaviour": {
         "name": "When a tracked token changes scene",

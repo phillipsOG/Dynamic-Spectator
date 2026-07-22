@@ -28,13 +28,6 @@
           <span class="ds-token-elev"><i class="fa-solid fa-mountain"></i> {{this.elevation}}</span>
         </span>
       </div>
-      {{#if ../perTokenEnabled}}
-      <button type="button" class="ds-btn ds-ring-btn {{#if ../ringHoverOnly}}ds-ring-btn-hover-only{{/if}}"
-              data-action="ringSettings"
-              title="{{localize 'dynamic-spectator.picker.ringSettings'}}">
-        <i class="fa-solid fa-palette"></i>
-      </button>
-      {{/if}}
       {{#if ../isGM}}
       <div class="ds-token-actions">
         {{#if this.isNpc}}
@@ -49,6 +42,13 @@
         </button>
         {{/if}}
       </div>
+      {{/if}}
+      {{#if ../perTokenEnabled}}
+      <button type="button" class="ds-btn ds-ring-btn {{#if ../ringHoverOnly}}ds-ring-btn-hover-only{{/if}}"
+              data-action="ringSettings"
+              title="{{localize 'dynamic-spectator.picker.ringSettings'}}">
+        <i class="fa-solid fa-palette"></i>
+      </button>
       {{/if}}
       <i class="fa-solid fa-eye ds-row-state"></i>
     </li>

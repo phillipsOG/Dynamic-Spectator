@@ -3,6 +3,22 @@
 All notable changes to Dynamic Spectator are documented here. This project
 adheres to [Semantic Versioning](https://semver.org/).
 
+## [2.1.6] - 2026-07-22
+
+### Fixed
+
+- The per-token ring button ignored "Only show ring options on hover" for
+  whichever row was currently being spectated, always showing on that one row
+  regardless of hover. Visibility now depends solely on the hover state, never
+  on whether the token happens to be the one you are watching.
+
+### Changed
+
+- Reordered the picker row so the GM-only opt-out/NPC button sits to the left
+  of the ring button, rather than between it and the trailing eye icon.
+- Renamed the "Only show ring button on hover" setting to "Only show ring
+  options on hover".
+
 ## [2.1.5] - 2026-07-22
 
 ### Added
