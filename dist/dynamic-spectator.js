@@ -1357,6 +1357,14 @@ var SpectatorPicker = class _SpectatorPicker extends HandlebarsApplicationMixin2
   static instance = null;
   /** Current search query (kept across re-renders). */
   query = "";
+  /**
+   * The open per-token ring dialog, if any - tracked so it can be closed from
+   * `closeAuxiliaryMenus()` when spectating stops. Escape is claimed globally
+   * while spectating (see controls.ts), which consumes the keypress before
+   * this dialog's own default Escape-to-close ever sees it, so we have to
+   * close it ourselves.
+   */
+  static ringDialog = null;
   async _prepareContext() {
     const s = state();
     const user = game.user;
@@ -1536,34 +1544,49 @@ var SpectatorPicker = class _SpectatorPicker extends HandlebarsApplicationMixin2
       </div>`;
     const DialogV2 = foundry.applications?.api?.DialogV2;
     if (!DialogV2) return;
-    await DialogV2.wait({
-      window: { title: `${game.i18n.localize("dynamic-spectator.picker.ringSettings")} - ${token.name}` },
-      content,
-      buttons: [
-        {
-          action: "save",
-          label: game.i18n.localize("dynamic-spectator.picker.save"),
-          default: true,
-          callback: async (_ev, button) => {
-            const form = button.form;
-            await setTokenIndicatorOverride(id, {
-              color: form.elements.namedItem("color").value,
-              opacity: Number(form.elements.namedItem("opacity").value),
-              width: Number(form.elements.namedItem("width").value)
-            });
-          }
-        },
-        {
-          action: "reset",
-          label: game.i18n.localize("dynamic-spectator.picker.resetRing"),
-          callback: async () => {
-            await clearTokenIndicatorOverride(id);
-          }
-        },
-        { action: "cancel", label: game.i18n.localize("Cancel") }
-      ]
+    Hooks.once("renderDialogV2", (app) => {
+      _SpectatorPicker.ringDialog = app;
     });
+    try {
+      await DialogV2.wait({
+        window: { title: `${game.i18n.localize("dynamic-spectator.picker.ringSettings")} - ${token.name}` },
+        content,
+        buttons: [
+          {
+            action: "save",
+            label: game.i18n.localize("dynamic-spectator.picker.save"),
+            default: true,
+            callback: async (_ev, button) => {
+              const form = button.form;
+              await setTokenIndicatorOverride(id, {
+                color: form.elements.namedItem("color").value,
+                opacity: Number(form.elements.namedItem("opacity").value),
+                width: Number(form.elements.namedItem("width").value)
+              });
+            }
+          },
+          {
+            action: "reset",
+            label: game.i18n.localize("dynamic-spectator.picker.resetRing"),
+            callback: async () => {
+              await clearTokenIndicatorOverride(id);
+            }
+          },
+          { action: "cancel", label: game.i18n.localize("Cancel") }
+        ]
+      });
+    } finally {
+      _SpectatorPicker.ringDialog = null;
+    }
     this.render();
+  }
+  /** Close any Dynamic Spectator-owned floating dialog. Called when spectating stops. */
+  static closeAuxiliaryMenus() {
+    try {
+      _SpectatorPicker.ringDialog?.close?.();
+    } catch {
+    }
+    _SpectatorPicker.ringDialog = null;
   }
   /** Singleton open helper. */
   static show() {
@@ -1620,6 +1643,11 @@ var SpectatorPicker = class _SpectatorPicker extends HandlebarsApplicationMixin2
       if (setting?.key?.startsWith(`${MODULE_ID}.`)) refresh();
     });
     Hooks.on(HOOKS.indicatorRingUiChanged, () => refresh());
+    Hooks.on(HOOKS.spectateStart, () => refresh());
+    Hooks.on(HOOKS.spectateStop, () => {
+      refresh();
+      _SpectatorPicker.closeAuxiliaryMenus();
+    });
     log.debug("picker refresh hooks registered");
   }
   /** Does this token update change anything the list shows or gates on? */
@@ -1809,7 +1837,7 @@ var TEMPLATES = [
 ];
 function buildApi() {
   return {
-    version: "2.1.9",
+    version: "2.1.10",
     /** Spectate a token by id. */
     spectate: (tokenId, exclusive = true) => DS.spectator?.start(tokenId, exclusive),
     stopSpectate: () => DS.spectator?.stop(),
@@ -1835,7 +1863,7 @@ function bootPhase(phase, fn) {
   }
 }
 Hooks.once("init", () => {
-  log.info(`Initializing ${MODULE_TITLE} v2.1.9 (user "${game?.user?.name}", GM=${game?.user?.isGM})`);
+  log.info(`Initializing ${MODULE_TITLE} v2.1.10 (user "${game?.user?.name}", GM=${game?.user?.isGM})`);
   bootPhase("settings", () => registerSettings());
   bootPhase("controls", () => registerAllControls());
   bootPhase("templates", () => {

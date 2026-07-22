@@ -3,6 +3,24 @@
 All notable changes to Dynamic Spectator are documented here. This project
 adheres to [Semantic Versioning](https://semver.org/).
 
+## [2.1.10] - 2026-07-22
+
+### Fixed
+
+- Pressing Escape to stop spectating left the picker's "Stop spectating"
+  button showing, since Escape never touched the picker's own render path -
+  only its own Stop button click did. The picker now listens for the module's
+  `spectateStart`/`spectateStop` hooks directly, so the button (and the
+  "current" row highlight) update immediately no matter what triggered the
+  stop: Escape, the Token HUD button, quick-spectate, the GM dashboard, or a
+  cross-scene drop.
+- The per-token ring dialog stayed open after Escape stopped spectating.
+  Escape is claimed globally while spectating (by design, so it reliably
+  stops spectating instead of just closing whatever window happens to be
+  focused) - which meant the dialog's own default Escape-to-close never saw
+  the keypress. The picker now explicitly closes it the moment spectating
+  stops, from any trigger.
+
 ## [2.1.9] - 2026-07-22
 
 ### Fixed

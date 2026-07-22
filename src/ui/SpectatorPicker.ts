@@ -92,6 +92,15 @@ export class SpectatorPicker extends HandlebarsApplicationMixin(ApplicationV2) {
   /** Current search query (kept across re-renders). */
   private query = "";
 
+  /**
+   * The open per-token ring dialog, if any - tracked so it can be closed from
+   * `closeAuxiliaryMenus()` when spectating stops. Escape is claimed globally
+   * while spectating (see controls.ts), which consumes the keypress before
+   * this dialog's own default Escape-to-close ever sees it, so we have to
+   * close it ourselves.
+   */
+  private static ringDialog: { close?: () => unknown } | null = null;
+
   async _prepareContext(): Promise<Record<string, unknown>> {
     const s = state();
     const user = game.user;
@@ -305,35 +314,53 @@ export class SpectatorPicker extends HandlebarsApplicationMixin(ApplicationV2) {
     const DialogV2 = (foundry as any).applications?.api?.DialogV2;
     if (!DialogV2) return;
 
-    await DialogV2.wait({
-      window: { title: `${game.i18n.localize("dynamic-spectator.picker.ringSettings")} - ${token.name}` },
-      content,
-      buttons: [
-        {
-          action: "save",
-          label: game.i18n.localize("dynamic-spectator.picker.save"),
-          default: true,
-          callback: async (_ev: Event, button: any) => {
-            const form = button.form as HTMLFormElement;
-            await setTokenIndicatorOverride(id, {
-              color: (form.elements.namedItem("color") as HTMLInputElement).value,
-              opacity: Number((form.elements.namedItem("opacity") as HTMLInputElement).value),
-              width: Number((form.elements.namedItem("width") as HTMLInputElement).value)
-            });
-          }
-        },
-        {
-          action: "reset",
-          label: game.i18n.localize("dynamic-spectator.picker.resetRing"),
-          callback: async () => {
-            await clearTokenIndicatorOverride(id);
-          }
-        },
-        { action: "cancel", label: game.i18n.localize("Cancel") }
-      ]
+    Hooks.once("renderDialogV2", (app: unknown) => {
+      SpectatorPicker.ringDialog = app as { close?: () => unknown };
     });
 
+    try {
+      await DialogV2.wait({
+        window: { title: `${game.i18n.localize("dynamic-spectator.picker.ringSettings")} - ${token.name}` },
+        content,
+        buttons: [
+          {
+            action: "save",
+            label: game.i18n.localize("dynamic-spectator.picker.save"),
+            default: true,
+            callback: async (_ev: Event, button: any) => {
+              const form = button.form as HTMLFormElement;
+              await setTokenIndicatorOverride(id, {
+                color: (form.elements.namedItem("color") as HTMLInputElement).value,
+                opacity: Number((form.elements.namedItem("opacity") as HTMLInputElement).value),
+                width: Number((form.elements.namedItem("width") as HTMLInputElement).value)
+              });
+            }
+          },
+          {
+            action: "reset",
+            label: game.i18n.localize("dynamic-spectator.picker.resetRing"),
+            callback: async () => {
+              await clearTokenIndicatorOverride(id);
+            }
+          },
+          { action: "cancel", label: game.i18n.localize("Cancel") }
+        ]
+      });
+    } finally {
+      SpectatorPicker.ringDialog = null;
+    }
+
     this.render();
+  }
+
+  /** Close any Dynamic Spectator-owned floating dialog. Called when spectating stops. */
+  static closeAuxiliaryMenus(): void {
+    try {
+      SpectatorPicker.ringDialog?.close?.();
+    } catch {
+      /* already closing/closed - nothing to do */
+    }
+    SpectatorPicker.ringDialog = null;
   }
 
   /** Singleton open helper. */
@@ -408,6 +435,20 @@ export class SpectatorPicker extends HandlebarsApplicationMixin(ApplicationV2) {
     // The picker's per-row palette button (whether it shows at all, and
     // whether it needs a hover) depends on these client settings.
     Hooks.on(HOOKS.indicatorRingUiChanged, () => refresh());
+
+    // Spectating can start/stop from places that never touch the picker
+    // directly - Escape, the Token HUD button, quick-spectate, the GM
+    // dashboard, cross-scene auto-follow/drop - so the "current" row and the
+    // Stop Spectating button need their own live-refresh here rather than
+    // relying on each of those call sites to remember to re-render us.
+    Hooks.on(HOOKS.spectateStart, () => refresh());
+    Hooks.on(HOOKS.spectateStop, () => {
+      refresh();
+      // Not debounced with the row refresh above: a dialog left open after
+      // spectating has already stopped should close immediately, not up to
+      // 100ms later.
+      SpectatorPicker.closeAuxiliaryMenus();
+    });
 
     log.debug("picker refresh hooks registered");
   }
