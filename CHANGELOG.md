@@ -3,6 +3,19 @@
 All notable changes to Dynamic Spectator are documented here. This project
 adheres to [Semantic Versioning](https://semver.org/).
 
+## [2.2.2] - 2026-07-22
+
+### Changed
+
+- **Auto-spectate active combatant now applies to the GM too.** Previously
+  the setting deliberately exempted the GM, on the assumption that forcing
+  their camera onto one combatant's clamped POV would fight their job of
+  running the encounter. In practice the GM just wants the same choice
+  everyone else has, so the exemption is gone: the GM can toggle it on or
+  off like any other client, via Module Settings or the Combat Tracker
+  quick-toggle, and it behaves identically for them (their permission check
+  always passes, so a valid combatant is always a valid target).
+
 ## [2.2.1] - 2026-07-22
 
 ### Changed

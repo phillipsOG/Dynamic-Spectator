@@ -67,15 +67,14 @@ export function registerSyncHooks(): void {
 
 /**
  * If enabled, retarget this client's spectated POV to whoever's turn it
- * currently is. Deliberately exempts the GM - who needs full map vision to
- * run the encounter, not one combatant's exclusive POV - regardless of the
- * setting. Anything that is not a valid target for this user right now (off
- * the viewed scene, opted out, permission mode disallows it, etc.) is
- * skipped silently rather than warned about, since this fires on every turn
- * and a manual spectate attempt already surfaces that warning.
+ * currently is - GM included, same as any player, since the setting is now a
+ * per-client preference rather than a player-only feature. Anything that is
+ * not a valid target for this user right now (off the viewed scene, opted
+ * out, permission mode disallows it, etc.) is skipped silently rather than
+ * warned about, since this fires on every turn and a manual spectate attempt
+ * already surfaces that warning.
  */
 function autoSpectateCombatant(combat: FoundryCombat): void {
-  if (game.user.isGM) return;
   if (!getSettings().autoSpectateCombatTurn) return;
 
   let s: ReturnType<typeof state>;

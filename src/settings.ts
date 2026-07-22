@@ -224,10 +224,9 @@ export function registerSettings(): void {
   });
 
   // ---- Combat ---------------------------------------------------------------
-  // On by default; the GM is deliberately exempt regardless of this setting
-  // (see SyncBridge's autoSpectateCombatant) since forcing their camera and
-  // vision onto one combatant's clamped POV would fight the GM's own job of
-  // running the encounter. The quick-toggle injected into the Combat Tracker
+  // On by default, same as any other client preference; the GM can toggle it
+  // to their own taste like everyone else (see SyncBridge's
+  // autoSpectateCombatant). The quick-toggle injected into the Combat Tracker
   // (see controls.ts) writes to this same setting for one-click access
   // without opening the full settings sheet.
   game.settings.register(MODULE_ID, SETTINGS.autoSpectateCombatTurn, {

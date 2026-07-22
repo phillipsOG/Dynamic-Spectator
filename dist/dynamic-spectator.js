@@ -1158,7 +1158,6 @@ function registerSyncHooks() {
   log.debug("sync hooks registered");
 }
 function autoSpectateCombatant(combat) {
-  if (game.user.isGM) return;
   if (!getSettings().autoSpectateCombatTurn) return;
   let s;
   try {
@@ -1891,7 +1890,7 @@ var TEMPLATES = [
 ];
 function buildApi() {
   return {
-    version: "2.2.1",
+    version: "2.2.2",
     /** Spectate a token by id. */
     spectate: (tokenId, exclusive = true) => DS.spectator?.start(tokenId, exclusive),
     stopSpectate: () => DS.spectator?.stop(),
@@ -1917,7 +1916,7 @@ function bootPhase(phase, fn) {
   }
 }
 Hooks.once("init", () => {
-  log.info(`Initializing ${MODULE_TITLE} v2.2.1 (user "${game?.user?.name}", GM=${game?.user?.isGM})`);
+  log.info(`Initializing ${MODULE_TITLE} v2.2.2 (user "${game?.user?.name}", GM=${game?.user?.isGM})`);
   bootPhase("settings", () => registerSettings());
   bootPhase("controls", () => registerAllControls());
   bootPhase("templates", () => {
