@@ -17,6 +17,20 @@
   --ds-shadow: 0 8px 30px rgba(0, 0, 0, 0.55);
 }
 
+/* ---- Core Settings Config: our own fields only ------------------------
+   Foundry's checkbox grows its border by a pixel when checked, and with the
+   default content-box sizing that changes the element's outer dimensions -
+   enough to nudge the whole settings list under the cursor when toggled.
+   Pinning box-sizing/width/height keeps that border growth inside the box
+   instead of expanding it. Scoped via the `namespace.key` name Foundry gives
+   every field we register, so no other module's settings are touched. */
+input[type="checkbox"][name^="dynamic-spectator."] {
+  box-sizing: border-box;
+  width: 14px;
+  height: 14px;
+  flex: 0 0 14px;
+}
+
 /* ---- Shared app chrome (picker + dashboard) --------------------------- */
 .dynamic-spectator-app .window-content {
   background: var(--ds-bg-solid);

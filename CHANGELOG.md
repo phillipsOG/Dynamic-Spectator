@@ -3,6 +3,18 @@
 All notable changes to Dynamic Spectator are documented here. This project
 adheres to [Semantic Versioning](https://semver.org/).
 
+## [2.1.9] - 2026-07-22
+
+### Fixed
+
+- Ticking one of our checkboxes in the core Settings Config screen nudged the
+  whole list by a pixel or two - Foundry's checkbox grows its border when
+  checked, and with default content-box sizing that changes the element's
+  outer dimensions. Pinned box-sizing/width/height on our own settings'
+  checkboxes (matched by the `namespace.key` field name, so no other module's
+  settings are affected) so the border grows inward instead of resizing the
+  row.
+
 ## [2.1.8] - 2026-07-22
 
 ### Changed
