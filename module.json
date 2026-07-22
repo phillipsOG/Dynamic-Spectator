@@ -2,7 +2,7 @@
   "id": "dynamic-spectator",
   "title": "Dynamic Spectator",
   "description": "Spectate any token with its true vision, lighting and fog. Lock the camera to a character, see exactly what they see - roofs and upper floors included - and drop out again with Escape.",
-  "version": "2.2.0",
+  "version": "2.2.1",
   "compatibility": {
     "minimum": "12",
     "verified": "13",
@@ -17,7 +17,7 @@
   ],
   "url": "https://github.com/phillipsOG/Dynamic-Spectator",
   "manifest": "https://raw.githubusercontent.com/phillipsOG/Dynamic-Spectator/main/module.json",
-  "download": "https://github.com/phillipsOG/Dynamic-Spectator/archive/refs/tags/v2.2.0.zip",
+  "download": "https://github.com/phillipsOG/Dynamic-Spectator/archive/refs/tags/v2.2.1.zip",
   "readme": "https://github.com/phillipsOG/Dynamic-Spectator/blob/main/README.md",
   "bugs": "https://github.com/phillipsOG/Dynamic-Spectator/issues",
   "license": "MIT",

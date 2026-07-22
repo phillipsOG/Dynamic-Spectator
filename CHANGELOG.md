@@ -3,6 +3,13 @@
 All notable changes to Dynamic Spectator are documented here. This project
 adheres to [Semantic Versioning](https://semver.org/).
 
+## [2.2.1] - 2026-07-22
+
+### Changed
+
+- Wording tweak to the "Auto-spectate active combatant" setting's hint:
+  "while a combat is active" → "when combat is active".
+
 ## [2.2.0] - 2026-07-22
 
 ### Added
