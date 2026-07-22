@@ -32,7 +32,23 @@
       },
       "zoomMemory": {
         "name": "Keep my zoom level",
-        "hint": "Hold the zoom you were already at when spectating starts, instead of re-framing."
+        "hint": "Start spectating at whatever zoom you were already using. Turn this off to re-frame to 100% instead. Either way you can zoom freely once spectating."
+      },
+      "indicatorEnabled": {
+        "name": "Show the spectating ring",
+        "hint": "Draw a ring on the token you are spectating. This is local to you — nobody else sees it."
+      },
+      "indicatorColor": {
+        "name": "Ring colour",
+        "hint": "Colour of the spectating ring."
+      },
+      "indicatorOpacity": {
+        "name": "Ring opacity",
+        "hint": "How solid the spectating ring is. 0 is invisible, 1 is fully opaque."
+      },
+      "indicatorWidth": {
+        "name": "Ring thickness",
+        "hint": "Stroke width of the spectating ring, in pixels."
       },
       "crossSceneBehaviour": {
         "name": "When a tracked token changes scene",

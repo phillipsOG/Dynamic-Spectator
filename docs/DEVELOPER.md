@@ -53,7 +53,11 @@ than reaching for `any` at the call site — it keeps call sites honest.
 | `cameraMode` | client | smooth | smooth/snap/interpolate/dead-zone. |
 | `followSpeed` | client | 0.6 | Easing responsiveness. |
 | `deadZone` | client | 0.2 | Dead-zone fraction. |
-| `zoomMemory` | client | true | Hold the zoom you started at. |
+| `zoomMemory` | client | true | Start at your current zoom; off re-frames to 100%. |
+| `indicatorEnabled` | client | true | Draw the spectating ring at all. |
+| `indicatorColor` | client | `#8ab4ff` | ColorField where available, else a hex string. |
+| `indicatorOpacity` | client | 0.9 | Ring alpha, 0–1. |
+| `indicatorWidth` | client | 3 | Ring stroke width in px. |
 | `crossSceneBehaviour` | client | prompt | prompt/follow/drop. |
 | `debugLogging` | client | false | Verbose console. |
 

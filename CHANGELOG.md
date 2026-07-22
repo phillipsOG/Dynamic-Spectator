@@ -3,6 +3,30 @@
 All notable changes to Dynamic Spectator are documented here. This project
 adheres to [Semantic Versioning](https://semver.org/).
 
+## [2.1.0] — 2026-07-22
+
+### Added
+
+- **The spectating ring is now yours to style.** Four new client-scoped
+  settings — **Show the spectating ring**, **Ring colour**, **Ring opacity** and
+  **Ring thickness** — replace what were hardcoded values. Colour uses a real
+  swatch picker where core exposes `ColorField`, falling back to a `#rrggbb`
+  text field otherwise. Changes repaint the live ring immediately rather than
+  waiting for the next spectate. The ring was always local to each client, and
+  still is, so these settings never affect what anyone else sees.
+
+### Fixed
+
+- **You can now zoom while spectating.** The camera lock was passing the scale
+  back to `canvas.pan()` on every tick, so a wheel zoom was overwritten within a
+  frame and the view snapped back. The lock now owns *position only* and omits
+  scale entirely, leaving zoom to the user for the whole session.
+- **"Keep my zoom level" did nothing.** Both branches of its ternary returned
+  the same value, so the setting had no effect whichever way it was set. It now
+  does what it says: on (the default) starts the session at the zoom you were
+  already using; off re-frames once to 100%. Either way zoom is free once
+  spectating — the setting only decides the starting framing.
+
 ## [2.0.2] — 2026-07-21
 
 ### Fixed

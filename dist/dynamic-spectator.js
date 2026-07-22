@@ -10,7 +10,7 @@ var __export = (target, all) => {
 };
 
 // src/constants.ts
-var MODULE_ID, MODULE_TITLE, SOCKET, FLAG_SCOPE, TOKEN_FLAGS, HOOKS, SETTINGS, PermissionMode, PERMISSION_MODE_LABELS, PERMISSION_DEFAULT, DOM;
+var MODULE_ID, MODULE_TITLE, SOCKET, FLAG_SCOPE, TOKEN_FLAGS, HOOKS, SETTINGS, PermissionMode, PERMISSION_MODE_LABELS, PERMISSION_DEFAULT, INDICATOR_DEFAULTS, DOM;
 var init_constants = __esm({
   "src/constants.ts"() {
     "use strict";
@@ -42,6 +42,11 @@ var init_constants = __esm({
       followSpeed: "followSpeed",
       deadZone: "deadZone",
       zoomMemory: "zoomMemory",
+      // Spectating ring appearance (per-user)
+      indicatorEnabled: "indicatorEnabled",
+      indicatorColor: "indicatorColor",
+      indicatorOpacity: "indicatorOpacity",
+      indicatorWidth: "indicatorWidth",
       // Multi-scene
       crossSceneBehaviour: "crossSceneBehaviour",
       // Diagnostics
@@ -63,6 +68,13 @@ var init_constants = __esm({
       ["any-token" /* AnyToken */]: `${MODULE_ID}.settings.permissionMode.anyToken`
     };
     PERMISSION_DEFAULT = "default";
+    INDICATOR_DEFAULTS = {
+      color: "#8ab4ff",
+      /** Parsed form of {@link INDICATOR_DEFAULTS.color}, for PIXI. */
+      colorInt: 9090303,
+      opacity: 0.9,
+      width: 3
+    };
     DOM = {
       /** The compact "you are spectating X" pill anchored above the hotbar. */
       spectateBar: `${MODULE_ID}-bar`
@@ -199,6 +211,15 @@ init_constants();
 // src/settings.ts
 init_constants();
 
+// src/state.ts
+var DS = { ready: false };
+function state() {
+  if (!DS.spectator) {
+    throw new Error("Dynamic Spectator accessed before initialization");
+  }
+  return DS;
+}
+
 // src/util/logger.ts
 init_constants();
 var PREFIX = `%c${MODULE_TITLE}`;
@@ -235,6 +256,15 @@ var log = {
 
 // src/settings.ts
 var L = (key) => `dynamic-spectator.settings.${key}`;
+var indicatorCache = null;
+function onIndicatorChange() {
+  indicatorCache = null;
+  try {
+    const token = DS.spectator?.tokenId ? canvas?.tokens?.get(DS.spectator.tokenId) : null;
+    token?.renderFlags?.set?.({ refreshState: true });
+  } catch {
+  }
+}
 function registerSettings() {
   game.settings.register(MODULE_ID, SETTINGS.permissionMode, {
     name: L("permissionMode.name"),
@@ -299,6 +329,45 @@ function registerSettings() {
     type: Boolean,
     default: true
   });
+  game.settings.register(MODULE_ID, SETTINGS.indicatorEnabled, {
+    name: L("indicatorEnabled.name"),
+    hint: L("indicatorEnabled.hint"),
+    scope: "client",
+    config: true,
+    type: Boolean,
+    default: true,
+    onChange: onIndicatorChange
+  });
+  const ColorField = foundry.data?.fields?.ColorField;
+  game.settings.register(MODULE_ID, SETTINGS.indicatorColor, {
+    name: L("indicatorColor.name"),
+    hint: L("indicatorColor.hint"),
+    scope: "client",
+    config: true,
+    type: ColorField ? new ColorField({ nullable: false, initial: INDICATOR_DEFAULTS.color }) : String,
+    default: INDICATOR_DEFAULTS.color,
+    onChange: onIndicatorChange
+  });
+  game.settings.register(MODULE_ID, SETTINGS.indicatorOpacity, {
+    name: L("indicatorOpacity.name"),
+    hint: L("indicatorOpacity.hint"),
+    scope: "client",
+    config: true,
+    type: Number,
+    range: { min: 0, max: 1, step: 0.05 },
+    default: INDICATOR_DEFAULTS.opacity,
+    onChange: onIndicatorChange
+  });
+  game.settings.register(MODULE_ID, SETTINGS.indicatorWidth, {
+    name: L("indicatorWidth.name"),
+    hint: L("indicatorWidth.hint"),
+    scope: "client",
+    config: true,
+    type: Number,
+    range: { min: 1, max: 10, step: 1 },
+    default: INDICATOR_DEFAULTS.width,
+    onChange: onIndicatorChange
+  });
   game.settings.register(MODULE_ID, SETTINGS.crossSceneBehaviour, {
     name: L("crossSceneBehaviour.name"),
     hint: L("crossSceneBehaviour.hint"),
@@ -330,6 +399,21 @@ function read(key, fallback) {
     return fallback;
   }
 }
+function hexToInt(value, fallback) {
+  const hex = String(value ?? "").trim().replace(/^#/, "");
+  if (!/^[0-9a-f]{6}$/i.test(hex)) return fallback;
+  const n = Number.parseInt(hex, 16);
+  return Number.isFinite(n) ? n : fallback;
+}
+function getIndicatorConfig() {
+  indicatorCache ??= {
+    enabled: read(SETTINGS.indicatorEnabled, true),
+    color: hexToInt(read(SETTINGS.indicatorColor, INDICATOR_DEFAULTS.color), INDICATOR_DEFAULTS.colorInt),
+    opacity: read(SETTINGS.indicatorOpacity, INDICATOR_DEFAULTS.opacity),
+    width: read(SETTINGS.indicatorWidth, INDICATOR_DEFAULTS.width)
+  };
+  return indicatorCache;
+}
 function getSettings() {
   return {
     permissionMode: read(SETTINGS.permissionMode, "any-player-token" /* AnyPlayerToken */),
@@ -341,6 +425,7 @@ function getSettings() {
       zoomMemory: read(SETTINGS.zoomMemory, true),
       followRotation: false
     },
+    indicator: getIndicatorConfig(),
     crossSceneBehaviour: read(SETTINGS.crossSceneBehaviour, "prompt" /* Prompt */),
     debugLogging: read(SETTINGS.debugLogging, false)
   };
@@ -412,6 +497,7 @@ function smoothingFactor(speed, dtMs) {
 }
 
 // src/spectator/CameraLock.ts
+var DEFAULT_SPECTATE_SCALE = 1;
 var CameraLock = class {
   token = null;
   config = null;
@@ -420,8 +506,6 @@ var CameraLock = class {
   lastTime = 0;
   /** Camera to restore when we release. */
   restore = null;
-  /** Target zoom while locked (kept stable unless the user zooms). */
-  targetScale = 1;
   get active() {
     return this.token !== null;
   }
@@ -430,9 +514,8 @@ var CameraLock = class {
     this.captureRestore();
     this.token = token;
     this.config = config;
-    this.targetScale = config.zoomMemory && config.mode ? this.currentScale() : this.currentScale();
     const c = token.center;
-    this.applyCamera(c.x, c.y, this.targetScale);
+    this.applyCamera(c.x, c.y, config.zoomMemory ? void 0 : DEFAULT_SPECTATE_SCALE);
     this.startTicker();
     log.debug(`CameraLock engaged on "${token.name}" mode=${config.mode}`);
   }
@@ -456,10 +539,6 @@ var CameraLock = class {
     if (!this.active || !token) return;
     this.token = token;
   }
-  /** Let the user's manual zoom override the locked zoom. */
-  setZoom(scale) {
-    this.targetScale = clamp(scale, 0.05, 5);
-  }
   // -- ticker ----------------------------------------------------------------
   startTicker() {
     if (this.ticker) return;
@@ -482,7 +561,7 @@ var CameraLock = class {
     if (!cur) return;
     switch (this.config.mode) {
       case "snap" /* Snap */: {
-        this.applyCamera(target.x, target.y, this.targetScale);
+        this.applyCamera(target.x, target.y);
         break;
       }
       case "dead-zone" /* DeadZone */: {
@@ -495,7 +574,7 @@ var CameraLock = class {
         const f = smoothingFactor(this.config.followSpeed, dt);
         const x = cur.x + (target.x - cur.x) * f;
         const y = cur.y + (target.y - cur.y) * f;
-        this.applyCamera(x, y, this.targetScale);
+        this.applyCamera(x, y);
         break;
       }
     }
@@ -511,12 +590,17 @@ var CameraLock = class {
     const dy = target.y - cur.y;
     if (Math.abs(dx) > halfW) nx = cur.x + (dx - Math.sign(dx) * halfW);
     if (Math.abs(dy) > halfH) ny = cur.y + (dy - Math.sign(dy) * halfH);
-    if (nx !== cur.x || ny !== cur.y) this.applyCamera(nx, ny, this.targetScale);
+    if (nx !== cur.x || ny !== cur.y) this.applyCamera(nx, ny);
   }
   // -- camera helpers --------------------------------------------------------
+  /**
+   * Pan to a world point. `scale` is omitted unless we explicitly mean to
+   * re-frame — passing the current scale back every tick is what previously
+   * cancelled the user's zoom the moment they scrolled.
+   */
   applyCamera(x, y, scale) {
     try {
-      canvas?.pan?.({ x, y, scale });
+      canvas?.pan?.(scale === void 0 ? { x, y } : { x, y, scale });
     } catch (err) {
       log.debug("pan failed", err);
     }
@@ -960,15 +1044,6 @@ var SpectatorManager = class {
     }
   }
 };
-
-// src/state.ts
-var DS = { ready: false };
-function state() {
-  if (!DS.spectator) {
-    throw new Error("Dynamic Spectator accessed before initialization");
-  }
-  return DS;
-}
 
 // src/sync/SyncBridge.ts
 init_constants();
@@ -1493,7 +1568,7 @@ function registerTokenHud() {
 function registerTokenIndicator() {
   const draw = (token) => {
     try {
-      const on = Boolean(token[`${FLAG_SCOPE}-spectating`]);
+      const on = Boolean(token[`${FLAG_SCOPE}-spectating`]) && getIndicatorConfig().enabled;
       const existing = token._dsIndicator;
       if (on && !existing) {
         const g = new PIXI.Graphics();
@@ -1511,14 +1586,15 @@ function registerTokenIndicator() {
     }
   };
   const redraw = (token, g) => {
+    const { color, opacity, width } = getIndicatorConfig();
     const w = token.w ?? 100;
     const h = token.h ?? 100;
     const r = Math.max(w, h) / 2 + 6;
     g.clear();
     if (typeof g.circle === "function" && typeof g.stroke === "function") {
-      g.circle(w / 2, h / 2, r).stroke({ width: 3, color: 9090303, alpha: 0.9 });
+      g.circle(w / 2, h / 2, r).stroke({ width, color, alpha: opacity });
     } else {
-      g.lineStyle(3, 9090303, 0.9);
+      g.lineStyle(width, color, opacity);
       g.drawCircle(w / 2, h / 2, r);
       g.lineStyle(0);
     }
@@ -1548,7 +1624,7 @@ var TEMPLATES = [
 ];
 function buildApi() {
   return {
-    version: "2.0.2",
+    version: "2.1.0",
     /** Spectate a token by id. */
     spectate: (tokenId, exclusive = true) => DS.spectator?.start(tokenId, exclusive),
     stopSpectate: () => DS.spectator?.stop(),
@@ -1574,7 +1650,7 @@ function bootPhase(phase, fn) {
   }
 }
 Hooks.once("init", () => {
-  log.info(`Initializing ${MODULE_TITLE} v2.0.2 (user "${game?.user?.name}", GM=${game?.user?.isGM})`);
+  log.info(`Initializing ${MODULE_TITLE} v2.1.0 (user "${game?.user?.name}", GM=${game?.user?.isGM})`);
   bootPhase("settings", () => registerSettings());
   bootPhase("controls", () => registerAllControls());
   bootPhase("templates", () => {

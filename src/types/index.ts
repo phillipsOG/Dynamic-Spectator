@@ -30,6 +30,17 @@ export interface CameraConfig {
   followRotation: boolean;
 }
 
+/** Resolved appearance of the ring drawn on the spectated token. */
+export interface IndicatorConfig {
+  enabled: boolean;
+  /** Parsed to 0xRRGGBB, because that is what PIXI wants. */
+  color: number;
+  /** 0..1 alpha. */
+  opacity: number;
+  /** Stroke width in pixels. */
+  width: number;
+}
+
 /** Resolved permission decision for a (user, token) pair. */
 export interface PermissionDecision {
   allowed: boolean;
@@ -42,6 +53,7 @@ export interface ResolvedSettings {
   /** Whether NPC (non-player-owned) tokens may be spectated by non-GM users. */
   allowNpcSpectate: boolean;
   camera: CameraConfig;
+  indicator: IndicatorConfig;
   crossSceneBehaviour: string;
   debugLogging: boolean;
 }

@@ -21,9 +21,12 @@ token's true vision, lighting and fog.
   revealed, so you see inside the building or on the upper floor rather than the
   rooftop — and it keeps up as the token changes elevation.
 - Camera modes: Smooth, Snap, Interpolate, Dead-zone. Framerate-independent.
+- **Zoom freely while spectating** — the lock owns position only, so the mouse
+  wheel works normally and your zoom sticks as the camera follows.
 - A compact **spectating bar** above the hotbar names who you are watching and
   carries the way out; **Escape** (or clicking the bar) ends the session.
-- Visual "spectating" ring on the active token.
+- A "spectating" ring on the active token, with **per-user colour, opacity and
+  thickness** (or turn it off entirely). It's local to you either way.
 
 ### GM Dashboard
 
@@ -101,7 +104,8 @@ column). The GM can always spectate.
 ## Settings (summary)
 
 Who may spectate · Allow spectating NPC tokens · Camera mode / follow speed /
-dead-zone / keep my zoom · Cross-scene behaviour · Debug logging.
+dead-zone / keep my zoom · Spectating ring on-off / colour / opacity /
+thickness · Cross-scene behaviour · Debug logging.
 
 See [docs/DEVELOPER.md](docs/DEVELOPER.md) for the full list and defaults.
 

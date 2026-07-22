@@ -5,12 +5,20 @@
  * Runs on the PIXI ticker but uses a wall-clock delta so smoothing feels
  * identical at 30fps and 144fps. The previous camera position is captured on
  * lock and restored on release, so spectating never strands the user's view.
+ *
+ * The lock owns *position only*. Zoom is left entirely to the user: the follow
+ * tick pans without passing a scale, so the mouse wheel (and any other zoom
+ * control) works normally while spectating instead of being stomped back to a
+ * fixed value every frame.
  */
 
 import { CameraMode } from "../constants.js";
 import type { CameraConfig } from "../types/index.js";
-import { clamp, smoothingFactor } from "../util/math.js";
+import { smoothingFactor } from "../util/math.js";
 import { log } from "../util/logger.js";
+
+/** Framing used when the user has opted out of keeping their own zoom. */
+const DEFAULT_SPECTATE_SCALE = 1;
 
 export class CameraLock {
   private token: FoundryToken | null = null;
@@ -23,9 +31,6 @@ export class CameraLock {
   /** Camera to restore when we release. */
   private restore: { x: number; y: number; scale: number } | null = null;
 
-  /** Target zoom while locked (kept stable unless the user zooms). */
-  private targetScale = 1;
-
   get active(): boolean {
     return this.token !== null;
   }
@@ -36,11 +41,12 @@ export class CameraLock {
 
     this.token = token;
     this.config = config;
-    this.targetScale = config.zoomMemory && config.mode ? this.currentScale() : this.currentScale();
 
     // Snap immediately to the token so there's no lurch on the first frame.
+    // `zoomMemory` keeps whatever zoom the user was already at; without it we
+    // re-frame once, here, and then never touch zoom again for the session.
     const c = token.center;
-    this.applyCamera(c.x, c.y, this.targetScale);
+    this.applyCamera(c.x, c.y, config.zoomMemory ? undefined : DEFAULT_SPECTATE_SCALE);
 
     this.startTicker();
     log.debug(`CameraLock engaged on "${token.name}" mode=${config.mode}`);
@@ -67,11 +73,6 @@ export class CameraLock {
   retarget(token: FoundryToken): void {
     if (!this.active || !token) return;
     this.token = token;
-  }
-
-  /** Let the user's manual zoom override the locked zoom. */
-  setZoom(scale: number): void {
-    this.targetScale = clamp(scale, 0.05, 5);
   }
 
   // -- ticker ----------------------------------------------------------------
@@ -101,7 +102,7 @@ export class CameraLock {
 
     switch (this.config.mode) {
       case CameraMode.Snap: {
-        this.applyCamera(target.x, target.y, this.targetScale);
+        this.applyCamera(target.x, target.y);
         break;
       }
       case CameraMode.DeadZone: {
@@ -114,7 +115,7 @@ export class CameraLock {
         const f = smoothingFactor(this.config.followSpeed, dt);
         const x = cur.x + (target.x - cur.x) * f;
         const y = cur.y + (target.y - cur.y) * f;
-        this.applyCamera(x, y, this.targetScale);
+        this.applyCamera(x, y);
         break;
       }
     }
@@ -133,14 +134,19 @@ export class CameraLock {
     if (Math.abs(dx) > halfW) nx = cur.x + (dx - Math.sign(dx) * halfW);
     if (Math.abs(dy) > halfH) ny = cur.y + (dy - Math.sign(dy) * halfH);
 
-    if (nx !== cur.x || ny !== cur.y) this.applyCamera(nx, ny, this.targetScale);
+    if (nx !== cur.x || ny !== cur.y) this.applyCamera(nx, ny);
   }
 
   // -- camera helpers --------------------------------------------------------
 
-  private applyCamera(x: number, y: number, scale: number): void {
+  /**
+   * Pan to a world point. `scale` is omitted unless we explicitly mean to
+   * re-frame — passing the current scale back every tick is what previously
+   * cancelled the user's zoom the moment they scrolled.
+   */
+  private applyCamera(x: number, y: number, scale?: number): void {
     try {
-      canvas?.pan?.({ x, y, scale });
+      canvas?.pan?.(scale === undefined ? { x, y } : { x, y, scale });
     } catch (err) {
       log.debug("pan failed", err);
     }

@@ -14,6 +14,7 @@
 
 import { FLAG_SCOPE, MODULE_ID } from "../constants.js";
 import { PermissionManager } from "../permissions/PermissionManager.js";
+import { getIndicatorConfig } from "../settings.js";
 import { state } from "../state.js";
 import { GMDashboard } from "./GMDashboard.js";
 import { SpectatorPicker } from "./SpectatorPicker.js";
@@ -166,11 +167,17 @@ export function registerTokenHud(): void {
   });
 }
 
-/** Draw / clear a pulsing ring on the token currently being spectated. */
+/**
+ * Draw / clear the ring on the token currently being spectated. Colour, opacity
+ * and width come from the per-user indicator settings, which invalidate their
+ * cache and poke this token's render flags when changed (see settings.ts), so
+ * edits show up live.
+ */
 export function registerTokenIndicator(): void {
   const draw = (token: FoundryToken): void => {
     try {
-      const on = Boolean((token as any)[`${FLAG_SCOPE}-spectating`]);
+      const on =
+        Boolean((token as any)[`${FLAG_SCOPE}-spectating`]) && getIndicatorConfig().enabled;
       const existing = (token as any)._dsIndicator;
       if (on && !existing) {
         const g = new (PIXI as any).Graphics();
@@ -189,15 +196,16 @@ export function registerTokenIndicator(): void {
   };
 
   const redraw = (token: FoundryToken, g: any): void => {
+    const { color, opacity, width } = getIndicatorConfig();
     const w = token.w ?? 100;
     const h = token.h ?? 100;
     const r = Math.max(w, h) / 2 + 6;
     g.clear();
     // PIXI v8 API (circle + stroke); fall back to v7 (lineStyle + drawCircle).
     if (typeof g.circle === "function" && typeof g.stroke === "function") {
-      g.circle(w / 2, h / 2, r).stroke({ width: 3, color: 0x8ab4ff, alpha: 0.9 });
+      g.circle(w / 2, h / 2, r).stroke({ width, color, alpha: opacity });
     } else {
-      g.lineStyle(3, 0x8ab4ff, 0.9);
+      g.lineStyle(width, color, opacity);
       g.drawCircle(w / 2, h / 2, r);
       g.lineStyle(0);
     }

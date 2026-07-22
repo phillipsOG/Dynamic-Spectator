@@ -44,6 +44,12 @@ export const SETTINGS = {
   deadZone: "deadZone",
   zoomMemory: "zoomMemory",
 
+  // Spectating ring appearance (per-user)
+  indicatorEnabled: "indicatorEnabled",
+  indicatorColor: "indicatorColor",
+  indicatorOpacity: "indicatorOpacity",
+  indicatorWidth: "indicatorWidth",
+
   // Multi-scene
   crossSceneBehaviour: "crossSceneBehaviour",
 
@@ -93,6 +99,15 @@ export enum CrossSceneBehaviour {
   Follow = "follow",
   Drop = "drop"
 }
+
+/** Default styling for the ring drawn on the spectated token. */
+export const INDICATOR_DEFAULTS = {
+  color: "#8ab4ff",
+  /** Parsed form of {@link INDICATOR_DEFAULTS.color}, for PIXI. */
+  colorInt: 0x8ab4ff,
+  opacity: 0.9,
+  width: 3
+} as const;
 
 /** CSS + DOM ids used by the UI layer. */
 export const DOM = {

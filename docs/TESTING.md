@@ -49,6 +49,13 @@ same elevation, one at a different elevation, and one NPC.
       back in and the reveal keeps up.
 - [ ] Spectate a second token while already spectating → retargets without a
       flash of your own vision, and the bar renames.
+- [ ] Scroll-wheel zoom while spectating → zoom changes and *stays* changed as
+      the token moves; the camera keeps following at the new zoom.
+- [ ] Turn off "Keep my zoom level", then spectate → re-frames to 100% once, and
+      wheel zoom still works freely afterwards.
+- [ ] Change ring colour / opacity / thickness while spectating → the ring
+      updates live, without restarting the session.
+- [ ] Turn the ring off → it disappears; turn it back on → it returns.
 - [ ] Token deleted while spectated → spectate stops cleanly.
 - [ ] Cross-scene: move the followed token to another scene → prompt/follow/drop
       per setting.
