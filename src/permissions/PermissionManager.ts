@@ -3,15 +3,15 @@
  * mode, per-player overrides, and per-token opt-out flags.
  *
  * The rule set (least → most permissive):
- *   gm-only          — only the GM may spectate anything.
- *   owned-only       — a player may spectate tokens they own.
- *   party-members    — owned tokens + tokens owned by any active player (the "party").
- *   any-player-token — any token that has a player owner (the default).
- *   any-token        — anything on the scene (still POV-clamped so no cheating).
+ *   gm-only          - only the GM may spectate anything.
+ *   owned-only       - a player may spectate tokens they own.
+ *   party-members    - owned tokens + tokens owned by any active player (the "party").
+ *   any-player-token - any token that has a player owner (the default).
+ *   any-token        - anything on the scene (still POV-clamped so no cheating).
  *
  * NPC tokens (no player owner) are a separate axis: they are only spectatable
  * when the world setting `allowNpcSpectate` is on, or when a per-token opt-in
- * flag says so — off by default so players only see each other by default. The
+ * flag says so - off by default so players only see each other by default. The
  * `any-token` mode is the explicit "everything, NPCs included" power mode and
  * ignores that gate.
  *
@@ -51,7 +51,7 @@ export class PermissionManager {
     return Boolean(token.actor?.hasPlayerOwner);
   }
 
-  /** True if `token` is an NPC — i.e. it has no player owner. */
+  /** True if `token` is an NPC - i.e. it has no player owner. */
   static isNpc(token: FoundryToken): boolean {
     return !this.hasPlayerOwner(token);
   }

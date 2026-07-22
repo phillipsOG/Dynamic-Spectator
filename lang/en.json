@@ -36,7 +36,7 @@
       },
       "indicatorEnabled": {
         "name": "Show the spectating ring",
-        "hint": "Draw a ring on the token you are spectating. This is local to you — nobody else sees it."
+        "hint": "Draw a ring on the token you are spectating. This is local to you - nobody else sees it."
       },
       "indicatorColor": {
         "name": "Ring colour",
@@ -89,7 +89,7 @@
       "drop": "Stop"
     },
     "dashboard": {
-      "title": "Dynamic Spectator — GM Dashboard",
+      "title": "Dynamic Spectator - GM Dashboard",
       "players": "Players",
       "permission": "Spectate permission for this player",
       "spectate": "Spectate",

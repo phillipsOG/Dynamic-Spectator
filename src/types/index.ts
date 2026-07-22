@@ -1,6 +1,6 @@
 /**
- * Internal (module-owned) types. These describe our own data structures — the
- * things we control — as opposed to Foundry's runtime shapes which live in
+ * Internal (module-owned) types. These describe our own data structures - the
+ * things we control - as opposed to Foundry's runtime shapes which live in
  * `foundry-shim.d.ts`.
  */
 

@@ -1,5 +1,5 @@
 /**
- * Dynamic Spectator — module entry point.
+ * Dynamic Spectator - module entry point.
  *
  * Boot sequence:
  *   init   → register settings, keybindings, scene controls, Token HUD, indicator,
@@ -32,7 +32,7 @@ const TEMPLATES = [
 /** Build the public API object once the manager exists. */
 function buildApi() {
   return {
-    version: "2.1.0",
+    version: "2.1.1",
     /** Spectate a token by id. */
     spectate: (tokenId: string, exclusive = true) => DS.spectator?.start(tokenId, exclusive),
     stopSpectate: () => DS.spectator?.stop(),
@@ -67,7 +67,7 @@ function bootPhase(phase: string, fn: () => void): void {
 }
 
 Hooks.once("init", () => {
-  log.info(`Initializing ${MODULE_TITLE} v2.1.0 (user "${game?.user?.name}", GM=${game?.user?.isGM})`);
+  log.info(`Initializing ${MODULE_TITLE} v2.1.1 (user "${game?.user?.name}", GM=${game?.user?.isGM})`);
   bootPhase("settings", () => registerSettings());
   bootPhase("controls", () => registerAllControls());
 

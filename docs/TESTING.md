@@ -7,10 +7,10 @@ integration** (must be validated in a live world). This document describes both.
 
 These modules are pure/deterministic and are the highest-value automated tests:
 
-- `PermissionManager.canSpectate` — a decision table across all five modes ×
+- `PermissionManager.canSpectate` - a decision table across all five modes ×
   {owned, party, player-token, npc} × {opt-out on/off} × {npc override
   on/off/unset} × {GM/player}.
-- `math.ts` — `smoothingFactor` is framerate-independent (same convergence for
+- `math.ts` - `smoothingFactor` is framerate-independent (same convergence for
   equal elapsed time at different dt).
 
 ### Suggested setup
@@ -18,7 +18,7 @@ These modules are pure/deterministic and are the highest-value automated tests:
 These files import only from `constants.ts`, `types/`, and `util/math.ts`, so
 they can be tested with **Vitest** by stubbing the few globals they read.
 `math` needs no globals. `PermissionManager` needs `game`, `canvas` and
-`game.settings.get` stubbed — provide a small fake.
+`game.settings.get` stubbed - provide a small fake.
 
 ```ts
 // math.test.ts
@@ -43,7 +43,7 @@ same elevation, one at a different elevation, and one NPC.
 ### Spectating
 - [ ] Spectate an owned token → camera locks, follows on move, vision matches.
 - [ ] Spectate a token in a dark/walled area → you see only what it can see.
-- [ ] Exclusive POV: while owning token A, spectate token B in a different room —
+- [ ] Exclusive POV: while owning token A, spectate token B in a different room -
       you must **not** see A's room.
 - [ ] Spectate a token under a roof → the roof is revealed; walk it outside and
       back in and the reveal keeps up.
@@ -83,7 +83,7 @@ same elevation, one at a different elevation, and one NPC.
 
 ## 3. Cross-version / compatibility
 
-- Verify on the lowest supported core (v12) and the verified core (v13) — focus on
+- Verify on the lowest supported core (v12) and the verified core (v13) - focus on
   `VisionController.forceRecompute` (the version-sensitive seam), scene-control
   registration (array vs record), Token HUD injection (jQuery vs HTMLElement),
   the `#ui-bottom` mount point for the bar, and `CONST.KEYBINDING_PRECEDENCE`.

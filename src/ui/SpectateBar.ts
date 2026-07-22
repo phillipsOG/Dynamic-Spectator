@@ -1,5 +1,5 @@
 /**
- * SpectateBar — the compact "you are spectating X" pill shown while a spectate
+ * SpectateBar - the compact "you are spectating X" pill shown while a spectate
  * session is live.
  *
  * It is deliberately tiny: an eye, the token name, and the Escape affordance
@@ -8,7 +8,7 @@
  * how a given core version lays that container out; it simply measures the
  * hotbar once and parks itself just above it.
  *
- * Purely local chrome — nothing here is persisted or broadcast.
+ * Purely local chrome - nothing here is persisted or broadcast.
  */
 
 import { DOM } from "../constants.js";
@@ -49,7 +49,7 @@ export class SpectateBar {
         "dynamic-spectator.controls.stop"
       )}"><kbd>Esc</kbd></button>`;
 
-    // Clicking anywhere on the pill stops spectating — the whole thing is the
+    // Clicking anywhere on the pill stops spectating - the whole thing is the
     // affordance, so the Esc key and the pill teach each other.
     el.addEventListener("click", (ev) => {
       ev.preventDefault();

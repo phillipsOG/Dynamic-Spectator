@@ -1,9 +1,9 @@
 /**
- * SpectatorPicker — a compact, searchable list of every token the current user
+ * SpectatorPicker - a compact, searchable list of every token the current user
  * may spectate. Each row shows portrait, name, elevation and disposition, and
  * marks the currently-spectated token.
  *
- * The row *is* the spectate button — clicking anywhere on it starts (or stops)
+ * The row *is* the spectate button - clicking anywhere on it starts (or stops)
  * spectating, which keeps the list narrow enough to sit beside the canvas. The
  * only per-row buttons are the GM's opt-out / NPC toggles, revealed on hover.
  *
@@ -256,7 +256,7 @@ export class SpectatorPicker extends HandlebarsApplicationMixin(ApplicationV2) {
     // A different scene is an entirely different token list.
     Hooks.on("canvasReady", () => refresh());
     // Our world settings are all permission settings, and permissions decide
-    // which rows a user may see at all — so any of ours is worth a refresh.
+    // which rows a user may see at all - so any of ours is worth a refresh.
     // (Client-scoped settings live in localStorage and never reach this hook,
     // which is fine: none of them affect the list.)
     Hooks.on("updateSetting", (setting: { key?: string }) => {

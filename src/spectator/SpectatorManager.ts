@@ -1,10 +1,10 @@
 /**
- * SpectatorManager — the single-token spectator feature.
+ * SpectatorManager - the single-token spectator feature.
  *
  * Wires together the three concerns of "spectate this token":
- *   1. PermissionManager — may this user do it at all?
- *   2. VisionController  — present the token's true POV (vision/light/fog).
- *   3. CameraLock        — lock and follow the camera.
+ *   1. PermissionManager - may this user do it at all?
+ *   2. VisionController  - present the token's true POV (vision/light/fog).
+ *   3. CameraLock        - lock and follow the camera.
  *
  * It also owns the on-canvas ring and the on-screen SpectateBar, and emits the
  * public `spectateStart` / `spectateStop` hooks so other modules can react.
@@ -139,7 +139,7 @@ export class SpectatorManager {
     this.occlusion.refresh();
   }
 
-  /** The spectated token was removed / left the scene — tear down cleanly. */
+  /** The spectated token was removed / left the scene - tear down cleanly. */
   onTokenGone(tokenId: string): void {
     if (this.currentTokenId !== tokenId) return;
     log.debug("spectated token gone; stopping");

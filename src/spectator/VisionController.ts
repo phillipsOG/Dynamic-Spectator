@@ -1,11 +1,11 @@
 /**
- * VisionController — the mechanism that makes the local client compute visibility,
+ * VisionController - the mechanism that makes the local client compute visibility,
  * lighting, and fog *as the spectated token would perceive them*.
  *
  * How Foundry vision actually works (and therefore how we hook it):
  *   Foundry builds the visibility mask each frame from the set of active
  *   "vision sources". A token becomes a vision source when
- *   `Token#_isVisionSource()` returns true — normally true only for tokens the
+ *   `Token#_isVisionSource()` returns true - normally true only for tokens the
  *   current user owns/observes (plus the GM's global sight). By wrapping that
  *   method we can make an *arbitrary* token contribute vision to *our* client,
  *   which is exactly "see what that token sees".
@@ -17,7 +17,7 @@
  *
  * Lighting, darkness, darkvision, blindsight/truesight and vision-mode are all
  * derived by core from the token's own `sight` configuration once it is an active
- * vision source, so they come along for free — we do not, and must not,
+ * vision source, so they come along for free - we do not, and must not,
  * re-implement them.
  *
  * Patching strategy: prefer lib-wrapper (clean, conflict-aware). If it is not
@@ -114,12 +114,12 @@ export class VisionController {
    * we cannot wait for Foundry's debounced perception tick. Tries the known
    * synchronous entry points across core versions; if none are synchronous the
    * capture simply renders with vision that is at most one frame stale (which is
-   * imperceptible while following) — documented in ARCHITECTURE.md.
+   * imperceptible while following) - documented in ARCHITECTURE.md.
    */
   forceRecompute(): void {
     const c = canvas as unknown as Record<string, any>;
     try {
-      // v11–v13: CanvasVisibility exposes a synchronous refresh.
+      // v11-v13: CanvasVisibility exposes a synchronous refresh.
       if (typeof c.visibility?.refresh === "function") c.visibility.refresh();
       // Effects layer refreshVisibility (present in several versions).
       if (typeof c.effects?.refreshVisibility === "function") c.effects.refreshVisibility();
@@ -142,7 +142,7 @@ export class VisionController {
     // The spectated token always contributes vision.
     if (self.id === target.id) return true;
 
-    // In exclusive mode nothing else does — this is the anti-cheat POV clamp.
+    // In exclusive mode nothing else does - this is the anti-cheat POV clamp.
     if (this.exclusive) return false;
 
     // Non-exclusive: keep the client's normal vision sources too.
@@ -241,7 +241,7 @@ export class VisionController {
         true
       );
     } catch (err) {
-      // Older signature (no v2 flag) — retry without it.
+      // Older signature (no v2 flag) - retry without it.
       try {
         canvas?.perception?.update({ refreshVision: true, refreshLighting: true });
       } catch (err2) {

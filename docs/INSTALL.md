@@ -1,6 +1,6 @@
 # Installation
 
-## Option A — Install by manifest (end users)
+## Option A - Install by manifest (end users)
 
 1. In Foundry, open **Add-on Modules → Install Module**.
 2. Paste the manifest URL:
@@ -11,7 +11,7 @@
 4. In your world, open **Manage Modules**, enable **Dynamic Spectator**, and
    (recommended) **lib-wrapper**. Save.
 
-## Option B — Install a release zip
+## Option B - Install a release zip
 
 1. Download `module.zip` from the
    [latest release](https://github.com/phillipsOG/Dynamic-Spectator/releases/latest).
@@ -19,7 +19,7 @@
    so that `Data/modules/dynamic-spectator/module.json` exists.
 3. Restart Foundry, then enable the module.
 
-## Option C — From source (developers)
+## Option C - From source (developers)
 
 ```bash
 git clone https://github.com/phillipsOG/Dynamic-Spectator.git
@@ -31,7 +31,7 @@ npm run build
 Then either copy the folder into `Data/modules/dynamic-spectator`, or link it:
 
 ```bash
-# Windows (PowerShell/Git Bash) — junction, no admin needed:
+# Windows (PowerShell/Git Bash) - junction, no admin needed:
 npm run link -- "C:/Users/<you>/AppData/Local/FoundryVTT/Data"
 
 # macOS/Linux:
@@ -56,7 +56,7 @@ Foundry shows it on the **Setup** screen under **Configuration** →
 ## Requirements
 
 - Foundry VTT **v12+** (verified on **v13**).
-- **lib-wrapper** — recommended, not required. Without it the module uses a
+- **lib-wrapper** - recommended, not required. Without it the module uses a
   manual, fully-reversible vision patch.
 
 ## Uninstall

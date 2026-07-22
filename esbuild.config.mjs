@@ -27,7 +27,7 @@ const options = {
   // Foundry ships its own PIXI + Handlebars on the global scope. Never bundle them.
   external: ["pixi.js", "handlebars"],
   banner: {
-    js: "/* Dynamic Spectator — bundled by esbuild. Source: https://github.com/phillipsOG/Dynamic-Spectator */"
+    js: "/* Dynamic Spectator - bundled by esbuild. Source: https://github.com/phillipsOG/Dynamic-Spectator */"
   }
 };
 

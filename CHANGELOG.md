@@ -3,13 +3,22 @@
 All notable changes to Dynamic Spectator are documented here. This project
 adheres to [Semantic Versioning](https://semver.org/).
 
-## [2.1.0] — 2026-07-22
+## [2.1.1] - 2026-07-22
+
+### Changed
+
+- **Plain hyphens everywhere.** Replaced all 107 em and en dashes across the
+  module with standard hyphens - source comments, docs, this changelog, the
+  localization strings, and the manifest description shown on the module card
+  in Foundry.
+
+## [2.1.0] - 2026-07-22
 
 ### Added
 
 - **The spectating ring is now yours to style.** Four new client-scoped
-  settings — **Show the spectating ring**, **Ring colour**, **Ring opacity** and
-  **Ring thickness** — replace what were hardcoded values. Colour uses a real
+  settings - **Show the spectating ring**, **Ring colour**, **Ring opacity** and
+  **Ring thickness** - replace what were hardcoded values. Colour uses a real
   swatch picker where core exposes `ColorField`, falling back to a `#rrggbb`
   text field otherwise. Changes repaint the live ring immediately rather than
   waiting for the next spectate. The ring was always local to each client, and
@@ -25,25 +34,25 @@ adheres to [Semantic Versioning](https://semver.org/).
   the same value, so the setting had no effect whichever way it was set. It now
   does what it says: on (the default) starts the session at the zoom you were
   already using; off re-frames once to 100%. Either way zoom is free once
-  spectating — the setting only decides the starting framing.
+  spectating - the setting only decides the starting framing.
 
-## [2.0.2] — 2026-07-21
+## [2.0.2] - 2026-07-21
 
 ### Fixed
 
 - **Permission changes now refresh an open picker.** A GM changing the
   permission mode, a per-player override, or the "Allow spectating NPC tokens"
   world setting left every player's open picker showing the old list. It now
-  refreshes on `updateSetting` for any setting in the module's namespace —
+  refreshes on `updateSetting` for any setting in the module's namespace -
   those are all permission settings, and permissions decide which rows a user
   may see at all.
 - **Per-token opt-out and NPC overrides now refresh it too.** Both are stored as
   token flags, and flag updates were not in the set of changes that triggered a
-  re-render — so a GM toggling one changed nothing on a player's screen until
+  re-render - so a GM toggling one changed nothing on a player's screen until
   they reopened the window. The check is scoped to the module's own flag
   namespace, so another module's flag churn does not re-render us.
 
-## [2.0.1] — 2026-07-21
+## [2.0.1] - 2026-07-21
 
 ### Fixed
 
@@ -52,16 +61,16 @@ adheres to [Semantic Versioning](https://semver.org/).
   reopened. It now re-renders on `createToken` / `deleteToken`, on `updateToken`
   for the fields a row actually displays (name, portrait, elevation,
   disposition, hidden, ownership), on `updateActor`, and on scene change.
-  Updates are debounced, and token *movement* is deliberately excluded — it
+  Updates are debounced, and token *movement* is deliberately excluded - it
   fires constantly and changes nothing in the list. A refresh landing while you
   type preserves the search box's focus and caret.
 - **The picker and dashboard could each open twice.** Their "already open?"
-  check searched `ui.windows`, which is the ApplicationV1 registry —
+  check searched `ui.windows`, which is the ApplicationV1 registry -
   ApplicationV2 windows are never in it, so the check always missed and a second
   instance was created with a duplicate DOM id. Each app now keeps its own
   instance handle, cleared on close.
 
-## [2.0.0] — 2026-07-21
+## [2.0.0] - 2026-07-21
 
 ### Removed
 
@@ -92,7 +101,7 @@ adheres to [Semantic Versioning](https://semver.org/).
 
 - **Escape now reliably stops spectating.** The keybinding registers at
   `KEYBINDING_PRECEDENCE.PRIORITY` so it beats core's own Escape handler, and it
-  only consumes the key while a session is actually live — Escape still closes
+  only consumes the key while a session is actually live - Escape still closes
   windows and deselects tokens the rest of the time.
 - **Slimmer spectator picker.** Narrower (264px) with compact rows: the row
   itself is the spectate/stop target, the "Add to MultiView" button is gone, and
@@ -113,10 +122,10 @@ adheres to [Semantic Versioning](https://semver.org/).
   than the localized labels that already existed for the world setting. Both now
   read from one `PERMISSION_MODE_LABELS` map so they cannot drift.
 - **Changing the dropdown could save a stale value.** It was dispatched through
-  ApplicationV2's action map, which fires on `click` — i.e. as the dropdown
+  ApplicationV2's action map, which fires on `click` - i.e. as the dropdown
   opens, before a new option is picked. It now listens for `change`.
 
-## [1.1.0] — 2026-07-21
+## [1.1.0] - 2026-07-21
 
 ### Added
 
@@ -131,7 +140,7 @@ adheres to [Semantic Versioning](https://semver.org/).
   player-token spectating never exposes NPC perspectives unless you opt in.
 - **Per-token NPC override.** From the spectator picker a GM can force a single
   NPC spectatable or non-spectatable (a `user-check` / `user-slash` toggle on
-  NPC rows), overriding the world default either way — handy for a familiar,
+  NPC rows), overriding the world default either way - handy for a familiar,
   companion, or a plot NPC the party is meant to follow. NPC rows are badged.
 
 ### Fixed / Changed
@@ -141,12 +150,12 @@ adheres to [Semantic Versioning](https://semver.org/).
   above it instead of showing the rooftop. Implemented with a reversible
   `TokenLayer#_getOccludableTokens` wrapper (lib-wrapper when present, manual
   fallback otherwise) that adds the spectated token to core's occlusion subject
-  set — so FADE, RADIAL and VISION occlusion modes all reveal correctly, the
+  set - so FADE, RADIAL and VISION occlusion modes all reveal correctly, the
   reveal follows the token up and down floors, and in exclusive POV mode only
   the spectated token drives occlusion (no information leak). Occlusion is
   restored exactly on stop.
 
-## [1.0.1] — 2026-07-21
+## [1.0.1] - 2026-07-21
 
 ### Fixed / Changed
 
@@ -155,8 +164,8 @@ adheres to [Semantic Versioning](https://semver.org/).
   `order` values, and v12-array / v13-record handling. Only the extra GM
   dashboard tool is role-gated; the base tools are available to everyone.
 - Hardened the boot sequence: each phase (settings, controls, managers, sync) and
-  each control registration now runs in an isolated guard, so a failure in one —
-  or a core API change on a given Foundry build — is clearly logged (with the
+  each control registration now runs in an isolated guard, so a failure in one -
+  or a core API change on a given Foundry build - is clearly logged (with the
   user's GM flag) and can never silently take the whole module down for a user.
   Keybindings and the Token HUD button remain available even if scene controls
   ever fail.
@@ -167,27 +176,27 @@ adheres to [Semantic Versioning](https://semver.org/).
 
 - `download` now points at the `v1.0.1` tag archive.
 
-## [1.0.0] — 2026-07-21
+## [1.0.0] - 2026-07-21
 
 Initial release.
 
 ### Added
 
-- **Universal Spectator Mode** — spectate any token you are permitted to, with
+- **Universal Spectator Mode** - spectate any token you are permitted to, with
   its true vision, lighting, darkness, fog, elevation and vision mode, via a
   reversible `Token#_isVisionSource` wrapper (lib-wrapper when present, manual
   fallback otherwise). Exclusive POV clamp prevents information leaks.
 - Camera lock + follow with Smooth / Snap / Interpolate / Dead-zone modes,
   framerate-independent smoothing, and camera restore on release.
-- **Dynamic MultiView** — multiple simultaneous token perspectives rendered via
+- **Dynamic MultiView** - multiple simultaneous token perspectives rendered via
   time-multiplexed off-screen `RenderTexture` captures of the real scene, with a
   primary/secondary render-priority scheduler and adaptive degradation.
-- Adaptive CCTV-style layout engine (1 / 2 / 3 / 4 / 5–9 / paginated), aspect
+- Adaptive CCTV-style layout engine (1 / 2 / 3 / 4 / 5-9 / paginated), aspect
   aware (16:9, 21:9 ultrawide, portrait), live window-resize handling.
 - Height-aware grouping engine (elevation bands + distance clustering) powering
   auto view creation and "observe this elevation".
 - Per-viewport overlays: character/player name, HP, conditions, elevation,
-  distance, scene, and a movement direction indicator — all configurable.
+  distance, scene, and a movement direction indicator - all configurable.
 - View management: primary, pin, collapse, solo/fullscreen, drag-and-drop
   reorder/swap, pagination.
 - Streaming mode (clean, borderless, minimal UI) for OBS capture.

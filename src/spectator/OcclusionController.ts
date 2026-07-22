@@ -1,5 +1,5 @@
 /**
- * OcclusionController — makes overhead/roof tiles reveal what the *spectated*
+ * OcclusionController - makes overhead/roof tiles reveal what the *spectated*
  * token is standing under, so spectating a character inside a building shows the
  * interior instead of the building's roof.
  *
@@ -7,7 +7,7 @@
  *   Overhead tiles (occlusion mode FADE / RADIAL / VISION) are only revealed for
  *   the set of "occludable subject" tokens returned by
  *   `TokenLayer#_getOccludableTokens()`. By default that set is *only the tokens
- *   the current user controls or owns* — so a spectated token (which the
+ *   the current user controls or owns* - so a spectated token (which the
  *   spectator neither controls nor owns) never punches through the roof, and the
  *   spectator is left staring at the rooftop. By wrapping that method to include
  *   the spectated token we make core reveal exactly the tiles that token is
@@ -20,7 +20,7 @@
  *   VisionController), so its vision polygon drives the reveal.
  *
  *   In EXCLUSIVE mode only the spectated token drives occlusion, so roofs over
- *   the spectator's *own* tokens elsewhere are not revealed — matching the POV
+ *   the spectator's *own* tokens elsewhere are not revealed - matching the POV
  *   clamp that stops spectating from leaking information.
  *
  * Patching strategy mirrors VisionController: prefer lib-wrapper, fall back to a
@@ -53,7 +53,7 @@ export class OcclusionController {
   /** The TokenLayer class whose prototype we patched (cached for teardown). */
   private layerClass: { prototype: FoundryTokenLayer } | null = null;
 
-  /** lib-wrapper target — resolved from CONFIG so it is version-stable. */
+  /** lib-wrapper target - resolved from CONFIG so it is version-stable. */
   private static readonly TARGET =
     "CONFIG.Canvas.layers.tokens.layerClass.prototype._getOccludableTokens";
 

@@ -33,15 +33,15 @@ modelling all of Foundry. `tsconfig.json` uses `skipLibCheck` and `"types": []`
 so nothing else leaks in.
 
 If you use a core API not yet in the shim, add a minimal declaration there rather
-than reaching for `any` at the call site — it keeps call sites honest.
+than reaching for `any` at the call site - it keeps call sites honest.
 
 ## Boot sequence
 
-- **init** — `registerSettings`, `registerAllControls` (keybindings, scene
+- **init** - `registerSettings`, `registerAllControls` (keybindings, scene
   controls, Token HUD, indicator), preload templates.
-- **setup** — construct `SpectatorManager`; publish the API onto
+- **setup** - construct `SpectatorManager`; publish the API onto
   `game.modules.get("dynamic-spectator").api` and `globalThis.DynamicSpectator`.
-- **ready** — `registerSyncHooks`; fire `dynamic-spectator.ready`.
+- **ready** - `registerSyncHooks`; fire `dynamic-spectator.ready`.
 
 ## Settings reference
 
@@ -56,7 +56,7 @@ than reaching for `any` at the call site — it keeps call sites honest.
 | `zoomMemory` | client | true | Start at your current zoom; off re-frames to 100%. |
 | `indicatorEnabled` | client | true | Draw the spectating ring at all. |
 | `indicatorColor` | client | `#8ab4ff` | ColorField where available, else a hex string. |
-| `indicatorOpacity` | client | 0.9 | Ring alpha, 0–1. |
+| `indicatorOpacity` | client | 0.9 | Ring alpha, 0-1. |
 | `indicatorWidth` | client | 3 | Ring stroke width in px. |
 | `crossSceneBehaviour` | client | prompt | prompt/follow/drop. |
 | `debugLogging` | client | false | Verbose console. |

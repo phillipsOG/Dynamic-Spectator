@@ -24,7 +24,7 @@ const L = (key: string): string => `dynamic-spectator.settings.${key}`;
 
 /**
  * Cleared whenever an indicator setting changes. The ring is redrawn on every
- * token refresh — which is every frame while a token is moving — so the config
+ * token refresh - which is every frame while a token is moving - so the config
  * is resolved once and reused rather than re-read per draw.
  */
 let indicatorCache: IndicatorConfig | null = null;
@@ -39,7 +39,7 @@ function onIndicatorChange(): void {
     const token = DS.spectator?.tokenId ? canvas?.tokens?.get(DS.spectator.tokenId) : null;
     token?.renderFlags?.set?.({ refreshState: true });
   } catch {
-    /* canvas not ready — the next draw picks up the new value anyway */
+    /* canvas not ready - the next draw picks up the new value anyway */
   }
 }
 

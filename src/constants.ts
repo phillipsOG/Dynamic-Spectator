@@ -80,7 +80,7 @@ export const PERMISSION_MODE_LABELS: Record<PermissionMode, string> = {
 };
 
 /**
- * Sentinel `<option>` value meaning "no per-player override — follow the world
+ * Sentinel `<option>` value meaning "no per-player override - follow the world
  * mode". Not a PermissionMode: it maps to deleting the override entirely.
  */
 export const PERMISSION_DEFAULT = "default" as const;

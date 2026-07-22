@@ -1,5 +1,5 @@
 /**
- * controls.ts — the entry points a user actually clicks / presses:
+ * controls.ts - the entry points a user actually clicks / presses:
  *   • a scene-control toggle group (Spectator picker, GM dashboard);
  *   • a Spectate button injected into the Token HUD (right-click a token);
  *   • keybindings (quick-spectate hovered token, open picker, stop spectating,
@@ -89,7 +89,7 @@ export function registerKeybindings(): void {
 
 /**
  * Add our tools to the token scene-control group. These render for EVERY user
- * (players included) — only the extra GM dashboard tool is role-gated, which
+ * (players included) - only the extra GM dashboard tool is role-gated, which
  * never affects the base spectate tool. Distinct `order` values and explicit
  * `visible:true` avoid v13 tool-record quirks, and the whole thing is wrapped so
  * a control-framework change can never take the module down.

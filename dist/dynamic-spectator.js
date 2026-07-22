@@ -1,4 +1,4 @@
-/* Dynamic Spectator — bundled by esbuild. Source: https://github.com/phillipsOG/Dynamic-Spectator */
+/* Dynamic Spectator - bundled by esbuild. Source: https://github.com/phillipsOG/Dynamic-Spectator */
 var __defProp = Object.defineProperty;
 var __getOwnPropNames = Object.getOwnPropertyNames;
 var __esm = (fn, res) => function __init() {
@@ -116,7 +116,7 @@ var init_PermissionManager = __esm({
       static hasPlayerOwner(token) {
         return Boolean(token.actor?.hasPlayerOwner);
       }
-      /** True if `token` is an NPC — i.e. it has no player owner. */
+      /** True if `token` is an NPC - i.e. it has no player owner. */
       static isNpc(token) {
         return !this.hasPlayerOwner(token);
       }
@@ -595,7 +595,7 @@ var CameraLock = class {
   // -- camera helpers --------------------------------------------------------
   /**
    * Pan to a world point. `scale` is omitted unless we explicitly mean to
-   * re-frame — passing the current scale back every tick is what previously
+   * re-frame - passing the current scale back every tick is what previously
    * cancelled the user's zoom the moment they scrolled.
    */
   applyCamera(x, y, scale) {
@@ -632,7 +632,7 @@ var OcclusionController = class _OcclusionController {
   wrapperInstalled = false;
   /** The TokenLayer class whose prototype we patched (cached for teardown). */
   layerClass = null;
-  /** lib-wrapper target — resolved from CONFIG so it is version-stable. */
+  /** lib-wrapper target - resolved from CONFIG so it is version-stable. */
   static TARGET = "CONFIG.Canvas.layers.tokens.layerClass.prototype._getOccludableTokens";
   get active() {
     return this.spectated !== null;
@@ -816,7 +816,7 @@ var VisionController = class {
    * we cannot wait for Foundry's debounced perception tick. Tries the known
    * synchronous entry points across core versions; if none are synchronous the
    * capture simply renders with vision that is at most one frame stale (which is
-   * imperceptible while following) — documented in ARCHITECTURE.md.
+   * imperceptible while following) - documented in ARCHITECTURE.md.
    */
   forceRecompute() {
     const c = canvas;
@@ -1024,7 +1024,7 @@ var SpectatorManager = class {
     this.vision.refresh();
     this.occlusion.refresh();
   }
-  /** The spectated token was removed / left the scene — tear down cleanly. */
+  /** The spectated token was removed / left the scene - tear down cleanly. */
   onTokenGone(tokenId) {
     if (this.currentTokenId !== tokenId) return;
     log.debug("spectated token gone; stopping");
@@ -1624,7 +1624,7 @@ var TEMPLATES = [
 ];
 function buildApi() {
   return {
-    version: "2.1.0",
+    version: "2.1.1",
     /** Spectate a token by id. */
     spectate: (tokenId, exclusive = true) => DS.spectator?.start(tokenId, exclusive),
     stopSpectate: () => DS.spectator?.stop(),
@@ -1650,7 +1650,7 @@ function bootPhase(phase, fn) {
   }
 }
 Hooks.once("init", () => {
-  log.info(`Initializing ${MODULE_TITLE} v2.1.0 (user "${game?.user?.name}", GM=${game?.user?.isGM})`);
+  log.info(`Initializing ${MODULE_TITLE} v2.1.1 (user "${game?.user?.name}", GM=${game?.user?.isGM})`);
   bootPhase("settings", () => registerSettings());
   bootPhase("controls", () => registerAllControls());
   bootPhase("templates", () => {

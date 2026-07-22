@@ -10,18 +10,18 @@ token's true vision, lighting and fog.
 
 ## Features
 
-- Spectate any token you are permitted to (configurable — see Permissions).
+- Spectate any token you are permitted to (configurable - see Permissions).
 - Camera **locks and follows** the token; live updates on every move.
 - Inherits the token's **vision, lighting, darkness, fog, elevation, vision mode,
-  darkvision, and system-provided senses** (blindsight/truesight) — because the
+  darkvision, and system-provided senses** (blindsight/truesight) - because the
   token becomes a real vision source, core computes all of this for you.
 - **Exclusive POV clamp**: you never see more than that token legitimately could,
   even if you own other tokens. Spectating is not a cheat.
 - **Height-aware**: roofs and overhead tiles above the spectated token are
   revealed, so you see inside the building or on the upper floor rather than the
-  rooftop — and it keeps up as the token changes elevation.
+  rooftop - and it keeps up as the token changes elevation.
 - Camera modes: Smooth, Snap, Interpolate, Dead-zone. Framerate-independent.
-- **Zoom freely while spectating** — the lock owns position only, so the mouse
+- **Zoom freely while spectating** - the lock owns position only, so the mouse
   wheel works normally and your zoom sticks as the camera follows.
 - A compact **spectating bar** above the hotbar names who you are watching and
   carries the way out; **Escape** (or clicking the bar) ends the session.
@@ -158,4 +158,4 @@ Docs: [Architecture](docs/ARCHITECTURE.md) · [Testing](docs/TESTING.md) ·
 
 ## License
 
-MIT — see [LICENSE](LICENSE).
+MIT - see [LICENSE](LICENSE).

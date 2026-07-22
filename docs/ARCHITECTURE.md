@@ -37,11 +37,11 @@ src/
     index.ts              Our own data types.
 ```
 
-## Spectator vision — how POV actually works
+## Spectator vision - how POV actually works
 
 Foundry builds the visibility mask each frame from the set of active **vision
 sources**. A token becomes a vision source when `Token#_isVisionSource()` returns
-true — normally only for tokens the current user owns/observes.
+true - normally only for tokens the current user owns/observes.
 
 `VisionController` wraps that method (via lib-wrapper when available, else a
 manual, fully-reversible prototype patch). While spectating token *T*:
@@ -51,8 +51,8 @@ manual, fully-reversible prototype patch). While spectating token *T*:
   `T`'s POV, so a spectator who happens to own other tokens gains no extra
   information. This is the anti-cheat guarantee.
 
-Everything downstream — lighting, darkness, darkvision, blindsight/truesight,
-vision mode, fog — is derived by core from `T`'s own sight configuration once it
+Everything downstream - lighting, darkness, darkvision, blindsight/truesight,
+vision mode, fog - is derived by core from `T`'s own sight configuration once it
 is a vision source. We deliberately do **not** reimplement any of it.
 
 Teardown always restores the original method, so the client is never left in a
@@ -61,7 +61,7 @@ patched state.
 ## Why one token at a time
 
 Foundry has one PIXI `Application` / WebGL context and **one** global
-visibility/fog/lighting state, computed for "the current viewer" —
+visibility/fog/lighting state, computed for "the current viewer" -
 `canvas.effects`, `canvas.visibility` and `canvas.fog` are singletons. There is
 therefore exactly one POV per client at any moment. `SpectatorManager.start()`
 retargets a live session instead of stacking a second one, which is why
@@ -74,8 +74,8 @@ Foundry's perception refresh is normally **debounced/async**.
 `VisionController.forceRecompute()` calls the known synchronous entry points
 (`canvas.visibility.refresh`, `canvas.effects.refreshVisibility`,
 `refreshLighting`) with feature detection so a retarget lands immediately. If a
-future core version renames these, the POV may be at most one frame stale —
-visually negligible — and this is the first place a maintainer should look when
+future core version renames these, the POV may be at most one frame stale -
+visually negligible - and this is the first place a maintainer should look when
 validating against a new core release. It is intentionally isolated to that one
 method.
 
@@ -111,9 +111,9 @@ All chrome is ordinary DOM:
 
 ## Extension points
 
-- **New permission rule** — `PermissionManager.canSpectate` is the single
+- **New permission rule** - `PermissionManager.canSpectate` is the single
   decision point and returns a machine-readable `reason` for the UI.
-- **New camera behaviour** — add a `CameraMode` and a branch in
+- **New camera behaviour** - add a `CameraMode` and a branch in
   `CameraLock.onTick`; `smoothingFactor` keeps it framerate-independent.
-- **Socket-driven "force spectate"** — the payload types already exist in
+- **Socket-driven "force spectate"** - the payload types already exist in
   `types/index.ts`; wire a handler in a new `SocketBridge`.

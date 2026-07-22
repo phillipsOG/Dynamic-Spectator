@@ -6,7 +6,7 @@
  * are enormous, version-sensitive, and frequently lag the current core release.
  * We only want the compiler to check *our* code, so we declare the handful of
  * globals and shapes we depend on and leave deep core internals as `any`.
- * Everything here is intentionally loose where the core API is sprawling — the
+ * Everything here is intentionally loose where the core API is sprawling - the
  * goal is catching our own mistakes, not modelling all of Foundry.
  */
 

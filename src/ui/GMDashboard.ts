@@ -1,5 +1,5 @@
 /**
- * GMDashboard — a GM control centre for the module.
+ * GMDashboard - a GM control centre for the module.
  *
  * Provides a per-player list for quickly spectating a single player's character
  * plus per-player permission overrides, so a GM can retune who may watch whom
@@ -111,7 +111,7 @@ export class GMDashboard extends HandlebarsApplicationMixin(ApplicationV2) {
   _onRender(_context: unknown, _options: unknown): void {
     const root = (this as any).element as HTMLElement;
     // Wired manually rather than through the action map: a <select> reports its
-    // new value on `change`, whereas the action map dispatches on `click` —
+    // new value on `change`, whereas the action map dispatches on `click` -
     // which fires as the dropdown *opens*, so it would read the stale value.
     root.querySelectorAll<HTMLSelectElement>("[data-ds-permission]").forEach((select) => {
       select.addEventListener("change", () => void this.setPermission(select));

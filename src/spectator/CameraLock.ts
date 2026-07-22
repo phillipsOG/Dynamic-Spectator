@@ -1,5 +1,5 @@
 /**
- * CameraLock — locks the *main* canvas camera onto a token and follows it every
+ * CameraLock - locks the *main* canvas camera onto a token and follows it every
  * frame using the configured behaviour (smooth / snap / interpolate / dead-zone).
  *
  * Runs on the PIXI ticker but uses a wall-clock delta so smoothing feels
@@ -141,7 +141,7 @@ export class CameraLock {
 
   /**
    * Pan to a world point. `scale` is omitted unless we explicitly mean to
-   * re-frame — passing the current scale back every tick is what previously
+   * re-frame - passing the current scale back every tick is what previously
    * cancelled the user's zoom the moment they scrolled.
    */
   private applyCamera(x: number, y: number, scale?: number): void {

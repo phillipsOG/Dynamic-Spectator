@@ -1,5 +1,5 @@
 /**
- * SyncBridge — the single place that binds Foundry's document/canvas lifecycle
+ * SyncBridge - the single place that binds Foundry's document/canvas lifecycle
  * hooks to the SpectatorManager, so a spectated POV stays synchronised in real
  * time with:
  *   move · teleport · elevation change · scene change · death · deletion ·
@@ -24,7 +24,7 @@ export function registerSyncHooks(): void {
     state().spectator.onTokenUpdate(doc.id);
   });
 
-  // A token finishing its movement animation — ensure the POV settles exactly.
+  // A token finishing its movement animation - ensure the POV settles exactly.
   Hooks.on("refreshToken", (token: FoundryToken) => {
     const s = state();
     if (s.spectator.tokenId === token.id) s.spectator.onTokenUpdate(token.id);
