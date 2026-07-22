@@ -3,6 +3,22 @@
 All notable changes to Dynamic Spectator are documented here. This project
 adheres to [Semantic Versioning](https://semver.org/).
 
+## [2.1.3] - 2026-07-22
+
+### Fixed
+
+- The picker's settings button no longer sits behind an ellipsis dropdown -
+  it is now a plain gear icon in the header, beside the close button, matching
+  how it actually looks in Foundry's ApplicationV2 header rather than the
+  collapsed `window.controls` menu.
+- Clicking that button now opens Settings already scrolled to the Dynamic
+  Spectator category, instead of leaving the player to find it themselves.
+- Toggling "Customise ring per token" now shows/hides the picker's palette
+  button immediately, without needing to close and reopen the picker. Client-
+  scoped settings never reach the `updateSetting` hook the rest of the list's
+  live-refresh relies on, so this fires from the setting's own `onChange`
+  instead.
+
 ## [2.1.2] - 2026-07-22
 
 ### Added

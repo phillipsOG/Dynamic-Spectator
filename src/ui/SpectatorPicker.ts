@@ -17,7 +17,7 @@
  * reopen the window.
  */
 
-import { MODULE_ID, TOKEN_FLAGS } from "../constants.js";
+import { HOOKS, MODULE_ID, MODULE_TITLE, TOKEN_FLAGS } from "../constants.js";
 import { PermissionManager } from "../permissions/PermissionManager.js";
 import {
   clearTokenIndicatorOverride,
@@ -63,14 +63,10 @@ export class SpectatorPicker extends HandlebarsApplicationMixin(ApplicationV2) {
     window: {
       title: "dynamic-spectator.picker.title",
       icon: "fa-solid fa-eye",
-      resizable: true,
-      controls: [
-        {
-          icon: "fa-solid fa-gear",
-          label: "dynamic-spectator.picker.settings",
-          action: "openSettings"
-        }
-      ]
+      resizable: true
+      // No `controls` entry here: ApplicationV2 always collapses those behind
+      // an ellipsis toggle. The settings button is a plain header icon instead,
+      // injected by hand in `_onRender` - see `injectSettingsButton`.
     },
     position: { width: 264, height: 400 as number | "auto" },
     actions: {
@@ -142,6 +138,8 @@ export class SpectatorPicker extends HandlebarsApplicationMixin(ApplicationV2) {
 
   _onRender(_context: unknown, _options: unknown): void {
     const root = (this as any).element as HTMLElement;
+    this.injectSettingsButton(root);
+
     const search = root.querySelector<HTMLInputElement>("[data-ds-search]");
     if (search) {
       search.value = this.query;
@@ -172,6 +170,27 @@ export class SpectatorPicker extends HandlebarsApplicationMixin(ApplicationV2) {
         activate();
       });
     });
+  }
+
+  /**
+   * A single gear icon in the header, beside the close button - not the
+   * dropdown ApplicationV2's `window.controls` would otherwise force. Runs on
+   * every render but bails out if already present, since `_onRender` fires on
+   * every re-render and the header markup is rebuilt each time.
+   */
+  private injectSettingsButton(root: HTMLElement): void {
+    const header = root.querySelector<HTMLElement>(".window-header");
+    if (!header || header.querySelector("[data-action='openSettings']")) return;
+
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "header-control icon fa-solid fa-gear";
+    button.dataset.action = "openSettings";
+    button.dataset.tooltip = game.i18n.localize("dynamic-spectator.picker.settings");
+
+    const close = header.querySelector("[data-action='close']");
+    if (close) close.before(button);
+    else header.appendChild(button);
   }
 
   private filterRows(root: HTMLElement): void {
@@ -220,8 +239,37 @@ export class SpectatorPicker extends HandlebarsApplicationMixin(ApplicationV2) {
     log.debug(`npc-spectatable ${!current} for ${token.name}`);
   }
 
+  /**
+   * Open the core Settings config, landing directly on our category rather
+   * than whatever it last had selected. The category sidebar has no public
+   * API for this, so once it renders we find and click our own entry -
+   * matched by id first, falling back to matching the visible title text in
+   * case the category markup changes shape across versions.
+   */
   static onOpenSettings(): void {
-    game.settings.sheet?.render(true);
+    const sheet = game.settings.sheet;
+    if (!sheet) return;
+
+    Hooks.once("renderSettingsConfig", (_app: unknown, htmlOrElement: unknown) => {
+      const root: HTMLElement | null =
+        htmlOrElement instanceof HTMLElement
+          ? htmlOrElement
+          : ((htmlOrElement as any)?.[0] ?? (htmlOrElement as any)?.element ?? null);
+      if (!root) return;
+
+      const byId = root.querySelector<HTMLElement>(
+        `[data-category="${MODULE_ID}"], [data-tab="${MODULE_ID}"]`
+      );
+      if (byId) {
+        byId.click();
+        return;
+      }
+
+      const candidates = Array.from(root.querySelectorAll<HTMLElement>("li, a, button"));
+      candidates.find((el) => el.textContent?.trim().startsWith(MODULE_TITLE))?.click();
+    });
+
+    sheet.render(true);
   }
 
   /** Open a small dialog to set (or reset) this token's ring colour/opacity/thickness. */
@@ -350,11 +398,14 @@ export class SpectatorPicker extends HandlebarsApplicationMixin(ApplicationV2) {
     Hooks.on("canvasReady", () => refresh());
     // Our world settings are all permission settings, and permissions decide
     // which rows a user may see at all - so any of ours is worth a refresh.
-    // (Client-scoped settings live in localStorage and never reach this hook,
-    // which is fine: none of them affect the list.)
+    // Client-scoped settings live in localStorage and never reach this hook;
+    // any of those that affect the list (e.g. indicatorPerToken) fire their
+    // own dedicated hook instead - see HOOKS.indicatorPerTokenChanged below.
     Hooks.on("updateSetting", (setting: { key?: string }) => {
       if (setting?.key?.startsWith(`${MODULE_ID}.`)) refresh();
     });
+    // The picker's per-row palette button depends on this client setting.
+    Hooks.on(HOOKS.indicatorPerTokenChanged, () => refresh());
 
     log.debug("picker refresh hooks registered");
   }

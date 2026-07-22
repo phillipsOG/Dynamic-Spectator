@@ -28,7 +28,13 @@ export const TOKEN_FLAGS = {
 /** Custom hooks other modules / macros can listen to. */
 export const HOOKS = {
   spectateStart: `${MODULE_ID}.spectateStart`,
-  spectateStop: `${MODULE_ID}.spectateStop`
+  spectateStop: `${MODULE_ID}.spectateStop`,
+  /**
+   * Fired from the `indicatorPerToken` setting's own `onChange` rather than
+   * relying on core's `updateSetting` hook, which client-scoped settings never
+   * reach (they are stored in `localStorage`, not a world `Setting` document).
+   */
+  indicatorPerTokenChanged: `${MODULE_ID}.indicatorPerTokenChanged`
 } as const;
 
 /** Every registered setting key. */

@@ -10,6 +10,7 @@
 import {
   CameraMode,
   CrossSceneBehaviour,
+  HOOKS,
   INDICATOR_DEFAULTS,
   MODULE_ID,
   PERMISSION_MODE_LABELS,
@@ -178,7 +179,12 @@ export function registerSettings(): void {
     config: true,
     type: Boolean,
     default: false,
-    onChange: onIndicatorChange
+    onChange: () => {
+      onIndicatorChange();
+      // The picker's palette button depends on this setting; fired here
+      // rather than left to `updateSetting` (see HOOKS.indicatorPerTokenChanged).
+      Hooks.callAll(HOOKS.indicatorPerTokenChanged);
+    }
   });
 
   // Not exposed on the config sheet - edited via the picker's per-row dialog.

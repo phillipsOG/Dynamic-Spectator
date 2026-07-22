@@ -30,7 +30,13 @@ var init_constants = __esm({
     };
     HOOKS = {
       spectateStart: `${MODULE_ID}.spectateStart`,
-      spectateStop: `${MODULE_ID}.spectateStop`
+      spectateStop: `${MODULE_ID}.spectateStop`,
+      /**
+       * Fired from the `indicatorPerToken` setting's own `onChange` rather than
+       * relying on core's `updateSetting` hook, which client-scoped settings never
+       * reach (they are stored in `localStorage`, not a world `Setting` document).
+       */
+      indicatorPerTokenChanged: `${MODULE_ID}.indicatorPerTokenChanged`
     };
     SETTINGS = {
       // Permissions
@@ -379,7 +385,10 @@ function registerSettings() {
     config: true,
     type: Boolean,
     default: false,
-    onChange: onIndicatorChange
+    onChange: () => {
+      onIndicatorChange();
+      Hooks.callAll(HOOKS.indicatorPerTokenChanged);
+    }
   });
   game.settings.register(MODULE_ID, SETTINGS.indicatorTokenOverrides, {
     scope: "client",
@@ -1310,14 +1319,10 @@ var SpectatorPicker = class _SpectatorPicker extends HandlebarsApplicationMixin2
     window: {
       title: "dynamic-spectator.picker.title",
       icon: "fa-solid fa-eye",
-      resizable: true,
-      controls: [
-        {
-          icon: "fa-solid fa-gear",
-          label: "dynamic-spectator.picker.settings",
-          action: "openSettings"
-        }
-      ]
+      resizable: true
+      // No `controls` entry here: ApplicationV2 always collapses those behind
+      // an ellipsis toggle. The settings button is a plain header icon instead,
+      // injected by hand in `_onRender` - see `injectSettingsButton`.
     },
     position: { width: 264, height: 400 },
     actions: {
@@ -1379,6 +1384,7 @@ var SpectatorPicker = class _SpectatorPicker extends HandlebarsApplicationMixin2
   }
   _onRender(_context, _options) {
     const root = this.element;
+    this.injectSettingsButton(root);
     const search = root.querySelector("[data-ds-search]");
     if (search) {
       search.value = this.query;
@@ -1405,6 +1411,24 @@ var SpectatorPicker = class _SpectatorPicker extends HandlebarsApplicationMixin2
         activate();
       });
     });
+  }
+  /**
+   * A single gear icon in the header, beside the close button - not the
+   * dropdown ApplicationV2's `window.controls` would otherwise force. Runs on
+   * every render but bails out if already present, since `_onRender` fires on
+   * every re-render and the header markup is rebuilt each time.
+   */
+  injectSettingsButton(root) {
+    const header = root.querySelector(".window-header");
+    if (!header || header.querySelector("[data-action='openSettings']")) return;
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "header-control icon fa-solid fa-gear";
+    button.dataset.action = "openSettings";
+    button.dataset.tooltip = game.i18n.localize("dynamic-spectator.picker.settings");
+    const close = header.querySelector("[data-action='close']");
+    if (close) close.before(button);
+    else header.appendChild(button);
   }
   filterRows(root) {
     const q = this.query.trim();
@@ -1445,8 +1469,30 @@ var SpectatorPicker = class _SpectatorPicker extends HandlebarsApplicationMixin2
     this.render();
     log.debug(`npc-spectatable ${!current} for ${token.name}`);
   }
+  /**
+   * Open the core Settings config, landing directly on our category rather
+   * than whatever it last had selected. The category sidebar has no public
+   * API for this, so once it renders we find and click our own entry -
+   * matched by id first, falling back to matching the visible title text in
+   * case the category markup changes shape across versions.
+   */
   static onOpenSettings() {
-    game.settings.sheet?.render(true);
+    const sheet = game.settings.sheet;
+    if (!sheet) return;
+    Hooks.once("renderSettingsConfig", (_app, htmlOrElement) => {
+      const root = htmlOrElement instanceof HTMLElement ? htmlOrElement : htmlOrElement?.[0] ?? htmlOrElement?.element ?? null;
+      if (!root) return;
+      const byId = root.querySelector(
+        `[data-category="${MODULE_ID}"], [data-tab="${MODULE_ID}"]`
+      );
+      if (byId) {
+        byId.click();
+        return;
+      }
+      const candidates = Array.from(root.querySelectorAll("li, a, button"));
+      candidates.find((el) => el.textContent?.trim().startsWith(MODULE_TITLE))?.click();
+    });
+    sheet.render(true);
   }
   /** Open a small dialog to set (or reset) this token's ring colour/opacity/thickness. */
   static async onRingSettings(_event, target) {
@@ -1559,6 +1605,7 @@ var SpectatorPicker = class _SpectatorPicker extends HandlebarsApplicationMixin2
     Hooks.on("updateSetting", (setting) => {
       if (setting?.key?.startsWith(`${MODULE_ID}.`)) refresh();
     });
+    Hooks.on(HOOKS.indicatorPerTokenChanged, () => refresh());
     log.debug("picker refresh hooks registered");
   }
   /** Does this token update change anything the list shows or gates on? */
@@ -1748,7 +1795,7 @@ var TEMPLATES = [
 ];
 function buildApi() {
   return {
-    version: "2.1.2",
+    version: "2.1.3",
     /** Spectate a token by id. */
     spectate: (tokenId, exclusive = true) => DS.spectator?.start(tokenId, exclusive),
     stopSpectate: () => DS.spectator?.stop(),
@@ -1774,7 +1821,7 @@ function bootPhase(phase, fn) {
   }
 }
 Hooks.once("init", () => {
-  log.info(`Initializing ${MODULE_TITLE} v2.1.2 (user "${game?.user?.name}", GM=${game?.user?.isGM})`);
+  log.info(`Initializing ${MODULE_TITLE} v2.1.3 (user "${game?.user?.name}", GM=${game?.user?.isGM})`);
   bootPhase("settings", () => registerSettings());
   bootPhase("controls", () => registerAllControls());
   bootPhase("templates", () => {
