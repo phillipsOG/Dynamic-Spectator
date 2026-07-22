@@ -47,6 +47,10 @@ var init_constants = __esm({
       indicatorColor: "indicatorColor",
       indicatorOpacity: "indicatorOpacity",
       indicatorWidth: "indicatorWidth",
+      /** Whether the user may override colour/opacity/thickness per spectated token. */
+      indicatorPerToken: "indicatorPerToken",
+      /** Per-token overrides: { [tokenId]: { color?, opacity?, width? } }. Client-scoped. */
+      indicatorTokenOverrides: "indicatorTokenOverrides",
       // Multi-scene
       crossSceneBehaviour: "crossSceneBehaviour",
       // Diagnostics
@@ -368,6 +372,22 @@ function registerSettings() {
     default: INDICATOR_DEFAULTS.width,
     onChange: onIndicatorChange
   });
+  game.settings.register(MODULE_ID, SETTINGS.indicatorPerToken, {
+    name: L("indicatorPerToken.name"),
+    hint: L("indicatorPerToken.hint"),
+    scope: "client",
+    config: true,
+    type: Boolean,
+    default: false,
+    onChange: onIndicatorChange
+  });
+  game.settings.register(MODULE_ID, SETTINGS.indicatorTokenOverrides, {
+    scope: "client",
+    config: false,
+    type: Object,
+    default: {},
+    onChange: onIndicatorChange
+  });
   game.settings.register(MODULE_ID, SETTINGS.crossSceneBehaviour, {
     name: L("crossSceneBehaviour.name"),
     hint: L("crossSceneBehaviour.hint"),
@@ -405,14 +425,39 @@ function hexToInt(value, fallback) {
   const n = Number.parseInt(hex, 16);
   return Number.isFinite(n) ? n : fallback;
 }
-function getIndicatorConfig() {
+function getIndicatorConfig(tokenId) {
   indicatorCache ??= {
     enabled: read(SETTINGS.indicatorEnabled, true),
     color: hexToInt(read(SETTINGS.indicatorColor, INDICATOR_DEFAULTS.color), INDICATOR_DEFAULTS.colorInt),
     opacity: read(SETTINGS.indicatorOpacity, INDICATOR_DEFAULTS.opacity),
     width: read(SETTINGS.indicatorWidth, INDICATOR_DEFAULTS.width)
   };
-  return indicatorCache;
+  if (!tokenId || !read(SETTINGS.indicatorPerToken, false)) return indicatorCache;
+  const override = getTokenIndicatorOverride(tokenId);
+  if (!override) return indicatorCache;
+  return {
+    enabled: indicatorCache.enabled,
+    color: override.color !== void 0 ? hexToInt(override.color, indicatorCache.color) : indicatorCache.color,
+    opacity: override.opacity ?? indicatorCache.opacity,
+    width: override.width ?? indicatorCache.width
+  };
+}
+function allTokenIndicatorOverrides() {
+  return read(SETTINGS.indicatorTokenOverrides, {});
+}
+function getTokenIndicatorOverride(tokenId) {
+  return allTokenIndicatorOverrides()[tokenId];
+}
+async function setTokenIndicatorOverride(tokenId, patch) {
+  const all = { ...allTokenIndicatorOverrides() };
+  all[tokenId] = { ...all[tokenId], ...patch };
+  await game.settings.set(MODULE_ID, SETTINGS.indicatorTokenOverrides, all);
+}
+async function clearTokenIndicatorOverride(tokenId) {
+  const all = { ...allTokenIndicatorOverrides() };
+  if (!(tokenId in all)) return;
+  delete all[tokenId];
+  await game.settings.set(MODULE_ID, SETTINGS.indicatorTokenOverrides, all);
 }
 function getSettings() {
   return {
@@ -426,6 +471,7 @@ function getSettings() {
       followRotation: false
     },
     indicator: getIndicatorConfig(),
+    indicatorPerToken: read(SETTINGS.indicatorPerToken, false),
     crossSceneBehaviour: read(SETTINGS.crossSceneBehaviour, "prompt" /* Prompt */),
     debugLogging: read(SETTINGS.debugLogging, false)
   };
@@ -1264,13 +1310,22 @@ var SpectatorPicker = class _SpectatorPicker extends HandlebarsApplicationMixin2
     window: {
       title: "dynamic-spectator.picker.title",
       icon: "fa-solid fa-eye",
-      resizable: true
+      resizable: true,
+      controls: [
+        {
+          icon: "fa-solid fa-gear",
+          label: "dynamic-spectator.picker.settings",
+          action: "openSettings"
+        }
+      ]
     },
     position: { width: 264, height: 400 },
     actions: {
       stop: _SpectatorPicker.onStop,
       optOut: _SpectatorPicker.onOptOut,
-      toggleNpc: _SpectatorPicker.onToggleNpc
+      toggleNpc: _SpectatorPicker.onToggleNpc,
+      openSettings: _SpectatorPicker.onOpenSettings,
+      ringSettings: _SpectatorPicker.onRingSettings
     }
   };
   static PARTS = {
@@ -1288,9 +1343,11 @@ var SpectatorPicker = class _SpectatorPicker extends HandlebarsApplicationMixin2
     const s = state();
     const user = game.user;
     const placeables = canvas?.tokens?.placeables ?? [];
+    const settings = getSettings();
     const rows = placeables.map((t) => {
       const decision = PermissionManager.canSpectate(user, t);
       const isNpc = PermissionManager.isNpc(t);
+      const override = getTokenIndicatorOverride(t.id);
       return {
         tokenId: t.id,
         name: t.name,
@@ -1302,6 +1359,11 @@ var SpectatorPicker = class _SpectatorPicker extends HandlebarsApplicationMixin2
         reason: decision.reason,
         isNpc,
         npcOptIn: isNpc && PermissionManager.npcSpectatable(t),
+        ring: {
+          color: override?.color ?? `#${settings.indicator.color.toString(16).padStart(6, "0")}`,
+          opacity: override?.opacity ?? settings.indicator.opacity,
+          width: override?.width ?? settings.indicator.width
+        },
         allowed: decision.allowed
       };
     }).filter((r) => r.allowed).sort((a, b) => a.name.localeCompare(b.name));
@@ -1310,7 +1372,9 @@ var SpectatorPicker = class _SpectatorPicker extends HandlebarsApplicationMixin2
       hasRows: rows.length > 0,
       spectating: s.spectator.active,
       isGM: user.isGM,
-      query: this.query
+      query: this.query,
+      perTokenEnabled: settings.indicatorPerToken,
+      version: game.modules.get(MODULE_ID)?.version ?? ""
     };
   }
   _onRender(_context, _options) {
@@ -1380,6 +1444,66 @@ var SpectatorPicker = class _SpectatorPicker extends HandlebarsApplicationMixin2
     await PermissionManager.setNpcSpectatable(token, !current);
     this.render();
     log.debug(`npc-spectatable ${!current} for ${token.name}`);
+  }
+  static onOpenSettings() {
+    game.settings.sheet?.render(true);
+  }
+  /** Open a small dialog to set (or reset) this token's ring colour/opacity/thickness. */
+  static async onRingSettings(_event, target) {
+    const id = _SpectatorPicker.tokenIdFrom(target);
+    if (!id) return;
+    const token = canvas?.tokens?.get(id);
+    if (!token) return;
+    const existing = getTokenIndicatorOverride(id);
+    const settings = getSettings();
+    const color = existing?.color ?? `#${settings.indicator.color.toString(16).padStart(6, "0")}`;
+    const opacity = existing?.opacity ?? settings.indicator.opacity;
+    const width = existing?.width ?? settings.indicator.width;
+    const content = `
+      <div class="ds-ring-dialog">
+        <div class="form-group">
+          <label>${game.i18n.localize("dynamic-spectator.settings.indicatorColor.name")}</label>
+          <input type="color" name="color" value="${color}" />
+        </div>
+        <div class="form-group">
+          <label>${game.i18n.localize("dynamic-spectator.settings.indicatorOpacity.name")}</label>
+          <input type="range" name="opacity" min="0" max="1" step="0.05" value="${opacity}" />
+        </div>
+        <div class="form-group">
+          <label>${game.i18n.localize("dynamic-spectator.settings.indicatorWidth.name")}</label>
+          <input type="range" name="width" min="1" max="10" step="1" value="${width}" />
+        </div>
+      </div>`;
+    const DialogV2 = foundry.applications?.api?.DialogV2;
+    if (!DialogV2) return;
+    await DialogV2.wait({
+      window: { title: `${game.i18n.localize("dynamic-spectator.picker.ringSettings")} - ${token.name}` },
+      content,
+      buttons: [
+        {
+          action: "save",
+          label: game.i18n.localize("dynamic-spectator.picker.save"),
+          default: true,
+          callback: async (_ev, button) => {
+            const form = button.form;
+            await setTokenIndicatorOverride(id, {
+              color: form.elements.namedItem("color").value,
+              opacity: Number(form.elements.namedItem("opacity").value),
+              width: Number(form.elements.namedItem("width").value)
+            });
+          }
+        },
+        {
+          action: "reset",
+          label: game.i18n.localize("dynamic-spectator.picker.resetRing"),
+          callback: async () => {
+            await clearTokenIndicatorOverride(id);
+          }
+        },
+        { action: "cancel", label: game.i18n.localize("Cancel") }
+      ]
+    });
+    this.render();
   }
   /** Singleton open helper. */
   static show() {
@@ -1568,7 +1692,7 @@ function registerTokenHud() {
 function registerTokenIndicator() {
   const draw = (token) => {
     try {
-      const on = Boolean(token[`${FLAG_SCOPE}-spectating`]) && getIndicatorConfig().enabled;
+      const on = Boolean(token[`${FLAG_SCOPE}-spectating`]) && getIndicatorConfig(token.id).enabled;
       const existing = token._dsIndicator;
       if (on && !existing) {
         const g = new PIXI.Graphics();
@@ -1586,7 +1710,7 @@ function registerTokenIndicator() {
     }
   };
   const redraw = (token, g) => {
-    const { color, opacity, width } = getIndicatorConfig();
+    const { color, opacity, width } = getIndicatorConfig(token.id);
     const w = token.w ?? 100;
     const h = token.h ?? 100;
     const r = Math.max(w, h) / 2 + 6;

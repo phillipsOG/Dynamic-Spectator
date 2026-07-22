@@ -19,6 +19,12 @@
 
 import { MODULE_ID, TOKEN_FLAGS } from "../constants.js";
 import { PermissionManager } from "../permissions/PermissionManager.js";
+import {
+  clearTokenIndicatorOverride,
+  getSettings,
+  getTokenIndicatorOverride,
+  setTokenIndicatorOverride
+} from "../settings.js";
 import { state } from "../state.js";
 import { log } from "../util/logger.js";
 
@@ -45,6 +51,8 @@ interface Row {
   isNpc: boolean;
   /** Effective "NPCs may be spectated" state for this token (for the GM toggle). */
   npcOptIn: boolean;
+  /** This token's ring override, resolved against the global defaults, for the per-token dialog. */
+  ring: { color: string; opacity: number; width: number };
 }
 
 export class SpectatorPicker extends HandlebarsApplicationMixin(ApplicationV2) {
@@ -55,13 +63,22 @@ export class SpectatorPicker extends HandlebarsApplicationMixin(ApplicationV2) {
     window: {
       title: "dynamic-spectator.picker.title",
       icon: "fa-solid fa-eye",
-      resizable: true
+      resizable: true,
+      controls: [
+        {
+          icon: "fa-solid fa-gear",
+          label: "dynamic-spectator.picker.settings",
+          action: "openSettings"
+        }
+      ]
     },
     position: { width: 264, height: 400 as number | "auto" },
     actions: {
       stop: SpectatorPicker.onStop,
       optOut: SpectatorPicker.onOptOut,
-      toggleNpc: SpectatorPicker.onToggleNpc
+      toggleNpc: SpectatorPicker.onToggleNpc,
+      openSettings: SpectatorPicker.onOpenSettings,
+      ringSettings: SpectatorPicker.onRingSettings
     }
   };
 
@@ -83,11 +100,13 @@ export class SpectatorPicker extends HandlebarsApplicationMixin(ApplicationV2) {
     const s = state();
     const user = game.user;
     const placeables: FoundryToken[] = canvas?.tokens?.placeables ?? [];
+    const settings = getSettings();
 
     const rows: Row[] = placeables
       .map((t) => {
         const decision = PermissionManager.canSpectate(user, t);
         const isNpc = PermissionManager.isNpc(t);
+        const override = getTokenIndicatorOverride(t.id);
         return {
           tokenId: t.id,
           name: t.name,
@@ -99,6 +118,11 @@ export class SpectatorPicker extends HandlebarsApplicationMixin(ApplicationV2) {
           reason: decision.reason,
           isNpc,
           npcOptIn: isNpc && PermissionManager.npcSpectatable(t),
+          ring: {
+            color: override?.color ?? `#${settings.indicator.color.toString(16).padStart(6, "0")}`,
+            opacity: override?.opacity ?? settings.indicator.opacity,
+            width: override?.width ?? settings.indicator.width
+          },
           allowed: decision.allowed
         } as Row & { allowed: boolean };
       })
@@ -110,7 +134,9 @@ export class SpectatorPicker extends HandlebarsApplicationMixin(ApplicationV2) {
       hasRows: rows.length > 0,
       spectating: s.spectator.active,
       isGM: user.isGM,
-      query: this.query
+      query: this.query,
+      perTokenEnabled: settings.indicatorPerToken,
+      version: (game.modules.get(MODULE_ID) as any)?.version ?? ""
     };
   }
 
@@ -192,6 +218,73 @@ export class SpectatorPicker extends HandlebarsApplicationMixin(ApplicationV2) {
     await PermissionManager.setNpcSpectatable(token, !current);
     this.render();
     log.debug(`npc-spectatable ${!current} for ${token.name}`);
+  }
+
+  static onOpenSettings(): void {
+    game.settings.sheet?.render(true);
+  }
+
+  /** Open a small dialog to set (or reset) this token's ring colour/opacity/thickness. */
+  static async onRingSettings(this: SpectatorPicker, _event: Event, target: HTMLElement): Promise<void> {
+    const id = SpectatorPicker.tokenIdFrom(target);
+    if (!id) return;
+    const token = canvas?.tokens?.get(id);
+    if (!token) return;
+
+    const existing = getTokenIndicatorOverride(id);
+    const settings = getSettings();
+    const color = existing?.color ?? `#${settings.indicator.color.toString(16).padStart(6, "0")}`;
+    const opacity = existing?.opacity ?? settings.indicator.opacity;
+    const width = existing?.width ?? settings.indicator.width;
+
+    const content = `
+      <div class="ds-ring-dialog">
+        <div class="form-group">
+          <label>${game.i18n.localize("dynamic-spectator.settings.indicatorColor.name")}</label>
+          <input type="color" name="color" value="${color}" />
+        </div>
+        <div class="form-group">
+          <label>${game.i18n.localize("dynamic-spectator.settings.indicatorOpacity.name")}</label>
+          <input type="range" name="opacity" min="0" max="1" step="0.05" value="${opacity}" />
+        </div>
+        <div class="form-group">
+          <label>${game.i18n.localize("dynamic-spectator.settings.indicatorWidth.name")}</label>
+          <input type="range" name="width" min="1" max="10" step="1" value="${width}" />
+        </div>
+      </div>`;
+
+    const DialogV2 = (foundry as any).applications?.api?.DialogV2;
+    if (!DialogV2) return;
+
+    await DialogV2.wait({
+      window: { title: `${game.i18n.localize("dynamic-spectator.picker.ringSettings")} - ${token.name}` },
+      content,
+      buttons: [
+        {
+          action: "save",
+          label: game.i18n.localize("dynamic-spectator.picker.save"),
+          default: true,
+          callback: async (_ev: Event, button: any) => {
+            const form = button.form as HTMLFormElement;
+            await setTokenIndicatorOverride(id, {
+              color: (form.elements.namedItem("color") as HTMLInputElement).value,
+              opacity: Number((form.elements.namedItem("opacity") as HTMLInputElement).value),
+              width: Number((form.elements.namedItem("width") as HTMLInputElement).value)
+            });
+          }
+        },
+        {
+          action: "reset",
+          label: game.i18n.localize("dynamic-spectator.picker.resetRing"),
+          callback: async () => {
+            await clearTokenIndicatorOverride(id);
+          }
+        },
+        { action: "cancel", label: game.i18n.localize("Cancel") }
+      ]
+    });
+
+    this.render();
   }
 
   /** Singleton open helper. */

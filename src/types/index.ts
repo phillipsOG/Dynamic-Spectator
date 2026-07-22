@@ -41,6 +41,14 @@ export interface IndicatorConfig {
   width: number;
 }
 
+/** Per-token override of the ring appearance. Any field left unset falls back to the global setting. */
+export interface TokenIndicatorOverride {
+  /** "#rrggbb" - kept as the raw string here (unlike {@link IndicatorConfig.color}) since it is form input. */
+  color?: string;
+  opacity?: number;
+  width?: number;
+}
+
 /** Resolved permission decision for a (user, token) pair. */
 export interface PermissionDecision {
   allowed: boolean;
@@ -54,6 +62,7 @@ export interface ResolvedSettings {
   allowNpcSpectate: boolean;
   camera: CameraConfig;
   indicator: IndicatorConfig;
+  indicatorPerToken: boolean;
   crossSceneBehaviour: string;
   debugLogging: boolean;
 }

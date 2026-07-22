@@ -17,7 +17,7 @@ import {
   SETTINGS
 } from "./constants.js";
 import { DS } from "./state.js";
-import type { IndicatorConfig, ResolvedSettings } from "./types/index.js";
+import type { IndicatorConfig, ResolvedSettings, TokenIndicatorOverride } from "./types/index.js";
 import { log } from "./util/logger.js";
 
 const L = (key: string): string => `dynamic-spectator.settings.${key}`;
@@ -168,6 +168,28 @@ export function registerSettings(): void {
     onChange: onIndicatorChange
   });
 
+  // Off by default: the colour/opacity/thickness above already cover "one
+  // ring style for every token I spectate". This only unlocks the ability to
+  // override that style per token from the spectator picker.
+  game.settings.register(MODULE_ID, SETTINGS.indicatorPerToken, {
+    name: L("indicatorPerToken.name"),
+    hint: L("indicatorPerToken.hint"),
+    scope: "client",
+    config: true,
+    type: Boolean,
+    default: false,
+    onChange: onIndicatorChange
+  });
+
+  // Not exposed on the config sheet - edited via the picker's per-row dialog.
+  game.settings.register(MODULE_ID, SETTINGS.indicatorTokenOverrides, {
+    scope: "client",
+    config: false,
+    type: Object,
+    default: {},
+    onChange: onIndicatorChange
+  });
+
   // ---- Multi-scene ---------------------------------------------------------
   game.settings.register(MODULE_ID, SETTINGS.crossSceneBehaviour, {
     name: L("crossSceneBehaviour.name"),
@@ -218,17 +240,54 @@ function hexToInt(value: unknown, fallback: number): number {
 }
 
 /**
- * Appearance of the spectating ring. Cached (see {@link indicatorCache}) because
- * this is read on every token refresh.
+ * Appearance of the spectating ring, optionally for a specific token. Base
+ * values are cached (see {@link indicatorCache}) because this is read on every
+ * token refresh; a per-token override, when enabled, is layered on top of the
+ * cached base rather than invalidating it.
  */
-export function getIndicatorConfig(): IndicatorConfig {
+export function getIndicatorConfig(tokenId?: string): IndicatorConfig {
   indicatorCache ??= {
     enabled: read<boolean>(SETTINGS.indicatorEnabled, true),
     color: hexToInt(read<unknown>(SETTINGS.indicatorColor, INDICATOR_DEFAULTS.color), INDICATOR_DEFAULTS.colorInt),
     opacity: read<number>(SETTINGS.indicatorOpacity, INDICATOR_DEFAULTS.opacity),
     width: read<number>(SETTINGS.indicatorWidth, INDICATOR_DEFAULTS.width)
   };
-  return indicatorCache;
+  if (!tokenId || !read<boolean>(SETTINGS.indicatorPerToken, false)) return indicatorCache;
+
+  const override = getTokenIndicatorOverride(tokenId);
+  if (!override) return indicatorCache;
+
+  return {
+    enabled: indicatorCache.enabled,
+    color: override.color !== undefined ? hexToInt(override.color, indicatorCache.color) : indicatorCache.color,
+    opacity: override.opacity ?? indicatorCache.opacity,
+    width: override.width ?? indicatorCache.width
+  };
+}
+
+/** All per-token ring overrides, keyed by token id. */
+function allTokenIndicatorOverrides(): Record<string, TokenIndicatorOverride> {
+  return read<Record<string, TokenIndicatorOverride>>(SETTINGS.indicatorTokenOverrides, {});
+}
+
+/** This token's stored override, if any. */
+export function getTokenIndicatorOverride(tokenId: string): TokenIndicatorOverride | undefined {
+  return allTokenIndicatorOverrides()[tokenId];
+}
+
+/** Persist (merge) a per-token override. */
+export async function setTokenIndicatorOverride(tokenId: string, patch: TokenIndicatorOverride): Promise<void> {
+  const all = { ...allTokenIndicatorOverrides() };
+  all[tokenId] = { ...all[tokenId], ...patch };
+  await game.settings.set(MODULE_ID, SETTINGS.indicatorTokenOverrides, all);
+}
+
+/** Remove this token's override entirely, falling back to the global ring style. */
+export async function clearTokenIndicatorOverride(tokenId: string): Promise<void> {
+  const all = { ...allTokenIndicatorOverrides() };
+  if (!(tokenId in all)) return;
+  delete all[tokenId];
+  await game.settings.set(MODULE_ID, SETTINGS.indicatorTokenOverrides, all);
 }
 
 /** Resolve every setting into a single typed object. Cheap enough to call per open. */
@@ -244,6 +303,7 @@ export function getSettings(): ResolvedSettings {
       followRotation: false
     },
     indicator: getIndicatorConfig(),
+    indicatorPerToken: read<boolean>(SETTINGS.indicatorPerToken, false),
     crossSceneBehaviour: read<string>(SETTINGS.crossSceneBehaviour, CrossSceneBehaviour.Prompt),
     debugLogging: read<boolean>(SETTINGS.debugLogging, false)
   };

@@ -49,6 +49,10 @@ export const SETTINGS = {
   indicatorColor: "indicatorColor",
   indicatorOpacity: "indicatorOpacity",
   indicatorWidth: "indicatorWidth",
+  /** Whether the user may override colour/opacity/thickness per spectated token. */
+  indicatorPerToken: "indicatorPerToken",
+  /** Per-token overrides: { [tokenId]: { color?, opacity?, width? } }. Client-scoped. */
+  indicatorTokenOverrides: "indicatorTokenOverrides",
 
   // Multi-scene
   crossSceneBehaviour: "crossSceneBehaviour",

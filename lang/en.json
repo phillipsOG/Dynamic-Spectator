@@ -50,6 +50,10 @@
         "name": "Ring thickness",
         "hint": "Stroke width of the spectating ring, in pixels."
       },
+      "indicatorPerToken": {
+        "name": "Customise ring per token",
+        "hint": "Let the ring's colour, opacity and thickness be overridden individually for each token from the spectator picker, instead of always using the settings above."
+      },
       "crossSceneBehaviour": {
         "name": "When a tracked token changes scene",
         "hint": "What to do when the token you are following moves to another scene.",
@@ -68,14 +72,18 @@
       "gmOnly": "Only the GM can do that."
     },
     "picker": {
-      "title": "Spectate a Token",
+      "title": "Dynamic Spectator",
       "search": "Search tokens…",
       "empty": "No tokens you can spectate on this scene.",
       "spectate": "Spectate",
       "stop": "Stop spectating",
       "optOut": "Toggle spectate opt-out",
       "toggleNpc": "Toggle whether players may spectate this NPC",
-      "npc": "NPC"
+      "npc": "NPC",
+      "settings": "Module Settings",
+      "ringSettings": "Customise ring for this token",
+      "save": "Save",
+      "resetRing": "Reset to default"
     },
     "disposition": {
       "friendly": "Friendly",

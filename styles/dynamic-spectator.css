@@ -210,6 +210,13 @@
   border-color: var(--ds-danger);
 }
 
+.ds-picker-footer {
+  padding: 4px 6px 6px;
+  text-align: center;
+  font-size: 10px;
+  color: var(--ds-muted);
+}
+
 /* ---- GM dashboard ------------------------------------------------------ */
 .ds-dashboard-body {
   padding: 10px;

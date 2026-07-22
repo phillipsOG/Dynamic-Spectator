@@ -74,6 +74,8 @@ declare global {
     registerMenu(namespace: string, key: string, data: Record<string, any>): void;
     get(namespace: string, key: string): any;
     set(namespace: string, key: string, value: unknown): Promise<unknown>;
+    /** The core "Configure Settings" application; present once at least one setting is registered. */
+    sheet?: { render(force?: boolean, options?: Record<string, any>): unknown };
   }
 
   interface FoundryKeybindings {

@@ -177,7 +177,7 @@ export function registerTokenIndicator(): void {
   const draw = (token: FoundryToken): void => {
     try {
       const on =
-        Boolean((token as any)[`${FLAG_SCOPE}-spectating`]) && getIndicatorConfig().enabled;
+        Boolean((token as any)[`${FLAG_SCOPE}-spectating`]) && getIndicatorConfig(token.id).enabled;
       const existing = (token as any)._dsIndicator;
       if (on && !existing) {
         const g = new (PIXI as any).Graphics();
@@ -196,7 +196,7 @@ export function registerTokenIndicator(): void {
   };
 
   const redraw = (token: FoundryToken, g: any): void => {
-    const { color, opacity, width } = getIndicatorConfig();
+    const { color, opacity, width } = getIndicatorConfig(token.id);
     const w = token.w ?? 100;
     const h = token.h ?? 100;
     const r = Math.max(w, h) / 2 + 6;
