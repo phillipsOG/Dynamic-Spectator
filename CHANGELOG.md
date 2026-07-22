@@ -3,6 +3,23 @@
 All notable changes to Dynamic Spectator are documented here. This project
 adheres to [Semantic Versioning](https://semver.org/).
 
+## [2.1.2] - 2026-07-22
+
+### Added
+
+- **Per-token ring customisation.** A new "Customise ring per token" setting
+  (off by default) lets each user override the spectating ring's colour,
+  opacity and thickness for individual tokens from the spectator picker,
+  instead of only the global default.
+- A settings shortcut (gear icon) in the spectator picker's window header,
+  jumping straight to the module's configuration.
+- A footer in the picker showing the installed module version.
+
+### Changed
+
+- The spectator picker's window title now reads "Dynamic Spectator" instead
+  of "Spectate a Token".
+
 ## [2.1.1] - 2026-07-22
 
 ### Changed
